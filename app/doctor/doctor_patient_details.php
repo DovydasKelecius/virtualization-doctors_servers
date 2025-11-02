@@ -32,7 +32,7 @@ $astmt = $pdo->prepare("
 $astmt->execute([$appointment_id]);
 $appointment = $astmt->fetch(PDO::FETCH_ASSOC);
 
-// Get patient medical history (all previous appointments)
+// Get appointment-based visit history
 $hstmt = $pdo->prepare("
     SELECT appointment_date, specialization, comment
     FROM appointments
@@ -41,6 +41,16 @@ $hstmt = $pdo->prepare("
 ");
 $hstmt->execute([$patient_id]);
 $history = $hstmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get medical records (entered by doctors)
+$rstmt = $pdo->prepare("
+    SELECT event, diagnosis, created_at
+    FROM medical_records
+    WHERE patient_id = ?
+    ORDER BY created_at DESC
+");
+$rstmt->execute([$patient_id]);
+$records = $rstmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="lt">
@@ -50,7 +60,7 @@ $history = $hstmt->fetchAll(PDO::FETCH_ASSOC);
 <style>
   body { font-family: Arial; background:#f8f9fa; text-align:center; padding:40px; }
   .card { background:white; display:inline-block; padding:25px; border-radius:10px;
-          box-shadow:0 0 10px rgba(0,0,0,0.1); width:500px; text-align:left; }
+          box-shadow:0 0 10px rgba(0,0,0,0.1); width:550px; text-align:left; }
   h1 { cursor:pointer; }
   h2 { text-align:center; }
   .info-row { margin:8px 0; }
@@ -63,6 +73,8 @@ $history = $hstmt->fetchAll(PDO::FETCH_ASSOC);
   th, td { border:1px solid #ccc; padding:8px; text-align:left; }
   th { background:#007bff; color:white; }
   tr:nth-child(even){ background:#f2f2f2; }
+  .green-btn { background:#28a745; }
+  .green-btn:hover { background:#218838; }
 </style>
 </head>
 <body>
@@ -78,8 +90,9 @@ $history = $hstmt->fetchAll(PDO::FETCH_ASSOC);
   <div class="info-row"><span class="label">Lytis:</span> <?= htmlspecialchars($patient['gender']) ?></div>
   <div class="info-row"><span class="label">Komentaras:</span> <?= htmlspecialchars($appointment['comment'] ?: '-') ?></div>
 
+  <!-- Appointment history -->
   <div class="history">
-    <h3>Medicininė istorija</h3>
+    <h3>Vizitų istorija</h3>
     <?php if (empty($history)): ?>
       <p>Nėra ankstesnių vizitų.</p>
     <?php else: ?>
@@ -100,6 +113,32 @@ $history = $hstmt->fetchAll(PDO::FETCH_ASSOC);
     <?php endif; ?>
   </div>
 
+  <!-- Medical records -->
+  <div class="history">
+    <h3>Medicininė istorija</h3>
+    <?php if (empty($records)): ?>
+      <p>Nėra įvestų medicininių įrašų.</p>
+    <?php else: ?>
+      <table>
+        <tr>
+          <th>Data</th>
+          <th>Įvykis</th>
+          <th>Išrašas</th>
+        </tr>
+        <?php foreach ($records as $r): ?>
+          <tr>
+            <td><?= date('Y-m-d H:i', strtotime($r['created_at'])) ?></td>
+            <td><?= htmlspecialchars($r['event']) ?></td>
+            <td><?= htmlspecialchars($r['diagnosis']) ?></td>
+          </tr>
+        <?php endforeach; ?>
+      </table>
+    <?php endif; ?>
+  </div>
+
+  <!-- Buttons -->
+  <a href="doctor_add_record.php?patient_id=<?= $patient_id ?>&appointment_id=<?= $appointment_id ?>" 
+     class="btn green-btn">Įvesti apsilankymo duomenis</a>
   <a href="doctor_patients.php" class="btn">← Grįžti į pacientų sąrašą</a>
 </div>
 
