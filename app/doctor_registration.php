@@ -37,6 +37,11 @@ $specializations = $specStmt->fetchAll(PDO::FETCH_COLUMN);
             transition: background-color 0.2s;
         }
         a.specialization:hover { background-color: #218838; }
+        /* Search button styling to match doctor buttons */
+        .search-btn {
+            margin-left:8px; padding:8px 12px; border-radius:4px; border:none; background:#28a745; color:#fff; cursor:pointer;
+        }
+        .search-btn:hover { background:#218838; }
         .top { font-size: 24px; font-weight: bold; margin-bottom: 20px; cursor:pointer; }
     </style>
 </head>
@@ -49,7 +54,7 @@ $specializations = $specStmt->fetchAll(PDO::FETCH_COLUMN);
     <div style="position: absolute; top: 12px; right: 12px;">
         <form action="doctor_list.php" method="GET" style="display:flex; align-items:center;">
             <input type="text" name="q" placeholder="Ieškoti gydytojo arba specializacijos" style="padding:8px 10px; width:260px; border:1px solid #ccc; border-radius:4px;" />
-            <button type="submit" style="margin-left:8px; padding:8px 12px; border-radius:4px; border:none; background:#007bff; color:#fff; cursor:pointer;">Ieškoti</button>
+            <button type="submit" class="search-btn">Ieškoti</button>
         </form>
     </div>
 
