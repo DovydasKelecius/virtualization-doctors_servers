@@ -122,9 +122,9 @@ $list = $appointments->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body>
   <h1>HOSPITAL</h1>
-  <h3>Pacientas: **<?= htmlspecialchars(
+  <h3>Pacientas: <?= htmlspecialchars(
       $patient["first_name"],
-  ) ?> <?= htmlspecialchars($patient["last_name"]) ?>**</h3>
+  ) ?> <?= htmlspecialchars($patient["last_name"]) ?></h3>
 
   <h2>Jūsų registracijos</h2>
 
