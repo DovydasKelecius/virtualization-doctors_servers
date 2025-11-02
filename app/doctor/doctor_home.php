@@ -94,6 +94,7 @@ $doctor = $stmt->fetch();
 <a href="doctor_patients.php" class="btn" style="background:#007bff;">Mano pacientai</a>
 
 
+
     <!-- Additional functionality can be added here -->
 </body>
 </html>

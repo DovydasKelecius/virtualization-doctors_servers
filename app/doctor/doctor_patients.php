@@ -57,14 +57,33 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <?php if (empty($appointments)): ?>
   <p>Šiuo metu neturite jokių užregistruotų vizitų.</p>
 <?php else: ?>
-  <table>
+    <table>
     <tr>
       <th>Data</th>
       <th>Laikas</th>
       <th>Pacientas</th>
       <th>Komentaras</th>
+      <th>Veiksmas</th>
     </tr>
-    <?php foreach ($appointments as $a): 
+    <?php
+    // include appointment id and patient id in the query
+    $stmt = $pdo->prepare("
+        SELECT 
+            a.id AS appointment_id,
+            a.appointment_date,
+            a.comment,
+            p.id AS patient_id,
+            p.first_name AS patient_first_name,
+            p.last_name AS patient_last_name
+        FROM appointments a
+        JOIN patients p ON a.patient_id = p.id
+        WHERE a.doctor_id = ?
+        ORDER BY a.appointment_date ASC
+    ");
+    $stmt->execute([$doctor_id]);
+    $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($appointments as $a):
         $date = date('Y-m-d', strtotime($a['appointment_date']));
         $time = date('H:i', strtotime($a['appointment_date']));
     ?>
@@ -73,9 +92,13 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <td><?= htmlspecialchars($time) ?></td>
         <td><?= htmlspecialchars($a['patient_first_name'] . ' ' . $a['patient_last_name']) ?></td>
         <td><?= htmlspecialchars($a['comment'] ?: '-') ?></td>
+        <td>
+          <a href="doctor_patient_details.php?appointment_id=<?= $a['appointment_id'] ?>&patient_id=<?= $a['patient_id'] ?>">Peržiūrėti</a>
+        </td>
       </tr>
     <?php endforeach; ?>
   </table>
+
 <?php endif; ?>
 
 <a href="doctor_home.php" class="back-btn">Grįžti atgal</a>
