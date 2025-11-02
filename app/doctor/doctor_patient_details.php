@@ -76,7 +76,6 @@ $history = $hstmt->fetchAll(PDO::FETCH_ASSOC);
   <div class="info-row"><span class="label">Asmens kodas:</span> <?= htmlspecialchars($patient['personal_code']) ?></div>
   <div class="info-row"><span class="label">Telefono numeris:</span> <?= htmlspecialchars($patient['phone']) ?></div>
   <div class="info-row"><span class="label">Lytis:</span> <?= htmlspecialchars($patient['gender']) ?></div>
-  <div class="info-row"><span class="label">Specializacija:</span> <?= htmlspecialchars($appointment['specialization']) ?></div>
   <div class="info-row"><span class="label">Komentaras:</span> <?= htmlspecialchars($appointment['comment'] ?: '-') ?></div>
 
   <div class="history">
