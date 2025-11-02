@@ -14,7 +14,7 @@ if (!isset($_GET['doctor_id']) || !isset($_GET['date'])) {
 $doctor_id = $_GET['doctor_id'];
 $date = $_GET['date'];
 
-// Gauti gydytojo informaciją
+// Get doctor info
 $stmt = $pdo->prepare("SELECT * FROM doctors WHERE id = ?");
 $stmt->execute([$doctor_id]);
 $doctor = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -23,17 +23,29 @@ if (!$doctor) {
     die("Gydytojas nerastas.");
 }
 
-// Generuoti laiko tarpus (kas 30 min nuo work_start iki work_end)
+// Fetch already booked times for that doctor/date
+$bookedStmt = $pdo->prepare("
+    SELECT TO_CHAR(appointment_date, 'HH24:MI') AS booked_time
+    FROM appointments
+    WHERE doctor_id = ? AND DATE(appointment_date) = ?
+");
+$bookedStmt->execute([$doctor_id, $date]);
+$booked_times = $bookedStmt->fetchAll(PDO::FETCH_COLUMN);
+
+// Generate 30-minute slots
 $time_slots = [];
 $startTime = new DateTime($doctor['work_start']);
 $endTime = new DateTime($doctor['work_end']);
 
 while ($startTime < $endTime) {
-    $time_slots[] = $startTime->format('H:i');
+    $slot = $startTime->format('H:i');
+    if (!in_array($slot, $booked_times)) {
+        $time_slots[] = $slot;
+    }
     $startTime->modify('+30 minutes');
 }
 
-// Jei forma pateikta (POST)
+// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $time = $_POST['time'] ?? '';
     $comment = $_POST['comment'] ?? '';
@@ -41,12 +53,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $specialization = $doctor['specialization'];
     $datetime = $date . ' ' . $time;
 
-    // Įrašyti vizitą į duomenų bazę
-    $stmt = $pdo->prepare("
-        INSERT INTO appointments (patient_id, specialization, appointment_date, comment)
-        VALUES (?, ?, ?, ?)
+    // Double-check availability (prevents race conditions)
+    $checkStmt = $pdo->prepare("
+        SELECT COUNT(*) FROM appointments
+        WHERE doctor_id = ? AND appointment_date = ?
     ");
-    $stmt->execute([$patient_id, $specialization, $datetime, $comment]);
+    $checkStmt->execute([$doctor_id, $datetime]);
+    if ($checkStmt->fetchColumn() > 0) {
+        die("❌ Šis laikas jau užimtas. Bandykite kitą laiką.");
+    }
+
+    // Insert appointment
+    $stmt = $pdo->prepare("
+        INSERT INTO appointments (patient_id, doctor_id, specialization, appointment_date, comment)
+        VALUES (?, ?, ?, ?, ?)
+    ");
+    $stmt->execute([$patient_id, $doctor_id, $specialization, $datetime, $comment]);
 
     $_SESSION['appointment_success'] = [
         'doctor' => $doctor['first_name'] . ' ' . $doctor['last_name'],
