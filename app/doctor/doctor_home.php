@@ -76,20 +76,23 @@ $doctor = $stmt->fetch();
     </div>
 
     <div class="details">
-        <h2>Jūsų informacija:</h2>
-        <div class="info-row">
-            <span class="label">Specializacija:</span>
-            <?= htmlspecialchars($doctor['specialization']) ?>
-        </div>
-        <div class="info-row">
-            <span class="label">Darbo laikas:</span>
-            <?= substr($doctor['work_start'], 0, 5) ?> - <?= substr($doctor['work_end'], 0, 5) ?>
-        </div>
-        <div class="info-row">
-            <span class="label">Darbuotojo ID:</span>
-            <?= htmlspecialchars($doctor['docloginid']) ?>
-        </div>
+    <h2>Jūsų informacija:</h2>
+    <div class="info-row">
+        <span class="label">Specializacija:</span>
+        <?= htmlspecialchars($doctor['specialization']) ?>
     </div>
+    <div class="info-row">
+        <span class="label">Darbo laikas:</span>
+        <?= substr($doctor['work_start'], 0, 5) ?> - <?= substr($doctor['work_end'], 0, 5) ?>
+    </div>
+    <div class="info-row">
+        <span class="label">Darbuotojo ID:</span>
+        <?= htmlspecialchars($doctor['docloginid']) ?>
+    </div>
+</div>
+
+<a href="doctor_patients.php" class="btn" style="background:#007bff;">Mano pacientai</a>
+
 
     <!-- Additional functionality can be added here -->
 </body>
