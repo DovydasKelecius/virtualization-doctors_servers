@@ -106,9 +106,9 @@ for ($i = 0; $i < 14; $i++) {
   <div class="top" onclick="window.location.href='patient_home.php'">HOSPITAL</div>
 
   <div class="doctor-info">
-    <h2>Dr. <?= htmlspecialchars($doctor['name']) ?></h2>
+    <h2>Dr. <?= htmlspecialchars($doctor['first_name'] . ' ' . $doctor['last_name']) ?></h2>
     <p><strong>Specializacija:</strong> <?= htmlspecialchars($doctor['specialization']) ?></p>
-    <p><strong>Darbo laikas:</strong> <?= htmlspecialchars($doctor['work_time']) ?></p>
+    <p><strong>Darbo laikas:</strong> <?= htmlspecialchars(substr($doctor['work_start'], 0, 5) . ' - ' . substr($doctor['work_end'], 0, 5)) ?></p>
   </div>
 
   <h3>Pasirinkite datą vizitui</h3>

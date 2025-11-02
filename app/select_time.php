@@ -14,7 +14,7 @@ if (!isset($_GET['doctor_id']) || !isset($_GET['date'])) {
 $doctor_id = $_GET['doctor_id'];
 $date = $_GET['date'];
 
-// Get doctor info
+// Gauti gydytojo informaciją
 $stmt = $pdo->prepare("SELECT * FROM doctors WHERE id = ?");
 $stmt->execute([$doctor_id]);
 $doctor = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -23,26 +23,25 @@ if (!$doctor) {
     die("Gydytojas nerastas.");
 }
 
-// Generate time slots (every 30 minutes)
+// Generuoti laiko tarpus (kas 30 min nuo work_start iki work_end)
 $time_slots = [];
-list($start, $end) = explode('-', $doctor['work_time']);
-$startTime = new DateTime(trim($start));
-$endTime = new DateTime(trim($end));
+$startTime = new DateTime($doctor['work_start']);
+$endTime = new DateTime($doctor['work_end']);
 
 while ($startTime < $endTime) {
     $time_slots[] = $startTime->format('H:i');
     $startTime->modify('+30 minutes');
 }
 
-// Handle booking form
+// Jei forma pateikta (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $time = $_POST['time'];
+    $time = $_POST['time'] ?? '';
     $comment = $_POST['comment'] ?? '';
     $patient_id = $_SESSION['patient_id'];
     $specialization = $doctor['specialization'];
     $datetime = $date . ' ' . $time;
 
-    // ✅ Save appointment including the comment
+    // Įrašyti vizitą į duomenų bazę
     $stmt = $pdo->prepare("
         INSERT INTO appointments (patient_id, specialization, appointment_date, comment)
         VALUES (?, ?, ?, ?)
@@ -50,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute([$patient_id, $specialization, $datetime, $comment]);
 
     $_SESSION['appointment_success'] = [
-        'doctor' => $doctor['name'],
+        'doctor' => $doctor['first_name'] . ' ' . $doctor['last_name'],
         'specialization' => $doctor['specialization'],
         'datetime' => $datetime,
         'comment' => $comment
@@ -71,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   .doctor-info { background: #fff; display: inline-block; padding: 20px; border-radius: 10px;
                  box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
   form { background: #fff; display: inline-block; padding: 20px; border-radius: 10px;
-         box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-top: 20px; text-align: left; width: 300px; }
+         box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-top: 20px; text-align: left; }
   select, textarea, button { display: block; width: 100%; padding: 10px; margin-top: 10px;
                              border-radius: 5px; border: 1px solid #ccc; }
   textarea { height: 100px; resize: none; }
@@ -86,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="top" onclick="window.location.href='patient_home.php'">HOSPITAL</div>
 
 <div class="doctor-info">
-  <h2>Dr. <?= htmlspecialchars($doctor['name']) ?></h2>
+  <h2>Dr. <?= htmlspecialchars($doctor['first_name'] . ' ' . $doctor['last_name']) ?></h2>
   <p><strong>Specializacija:</strong> <?= htmlspecialchars($doctor['specialization']) ?></p>
   <p><strong>Pasirinkta data:</strong> <?= htmlspecialchars($date) ?></p>
 </div>
@@ -95,6 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <form method="POST">
   <label>Laikas:</label>
   <select name="time" required>
+    <option value="">-- Pasirinkite laiką --</option>
     <?php foreach ($time_slots as $t): ?>
       <option value="<?= $t ?>"><?= $t ?></option>
     <?php endforeach; ?>
