@@ -17,8 +17,7 @@ try {
         header("Location: logout.php");
         exit();
     }
-
-    // ✅ Get medical history records from medical_records table
+    
     $history_stmt = $pdo->prepare("
         SELECT 
             mr.event, 
