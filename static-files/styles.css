@@ -1,0 +1,193 @@
+:root {
+  --bg: #f6f7fb;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --primary: #cc1f1a;
+  --primary-600: #b11b17;
+  --border: #e5e7eb;
+  --card: #ffffff;
+  --radius: 14px;
+  --shadow: 0 6px 16px rgba(0,0,0,.06);
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font: 16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+  background: pink;
+}
+
+.wrap { max-width: 520px; margin: 0 auto; padding: 32px; }
+.site-header { display: flex; justify-content: center; margin: 12px 0 24px; }
+.logo { font-weight: 800; color: var(--primary); text-decoration: none; letter-spacing: 1px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+.center { text-align: center; }
+
+.form-card h2 { margin-top: 0; margin-bottom: 12px; }
+.form { display: grid; gap: 14px; }
+label { display: grid; gap: 8px; font-size: 14px; }
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"] {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #fff;
+  outline: none;
+}
+input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(204,31,26,.12); }
+
+.checkbox { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.password { display: flex; gap: 8px; align-items: center; }
+.password input { flex: 1; }
+.link {
+  border: none;
+  background: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+.link:hover { text-decoration: underline; }
+
+.btn-row { display: flex; gap: 12px; justify-content: center; }
+.btn, .btn-outline {
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-weight: 600;
+  border: 1px solid var(--primary);
+}
+.btn { background: var(--primary); color: #fff; }
+.btn:hover { background: var(--primary-600); }
+.btn-outline { background: #fff; color: var(--primary); }
+.btn-outline:hover { background: #fff1f0; }
+.w-100 { width: 100%; }
+
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+
+.msg { min-height: 1.25em; margin-bottom: 6px; color: var(--muted); }
+.msg.error { color: #b91c1c; }
+
+.user-info {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-weight: 600;
+}
+
+.btn-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.appointments-list,
+.medical-history,
+.doctors-list {
+    display: grid;
+    gap: 16px;
+}
+
+.appointment-card,
+.record-card,
+.doctor-card {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+}
+
+.calendar {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.date-btn {
+    display: block;
+    padding: 12px;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.date-btn.available {
+    background: #dcfce7;
+    border-color: #22c55e;
+    color: #166534;
+}
+
+.date-btn.unavailable {
+    background: #f3f4f6;
+    color: var(--muted);
+    cursor: not-allowed;
+}
+
+.times-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.time-option input {
+    display: none;
+}
+
+.time-btn {
+    display: block;
+    padding: 12px;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    background: white;
+}
+
+.time-option input:checked + .time-btn {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.appointment-details {
+    background: #f0f9ff;
+    padding: 20px;
+    border-radius: var(--radius);
+    margin: 20px 0;
+}
+
+textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: inherit;
+    resize: vertical;
+}
+
+@media (max-width: 480px) {
+    .wrap { padding: 20px; }
+    .btn-row { flex-direction: column; }
+    .btn-grid { grid-template-columns: 1fr; }
+    .calendar { grid-template-columns: 1fr; }
+    .user-info { position: static; text-align: center; margin-top: 10px; }
+}
