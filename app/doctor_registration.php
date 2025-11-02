@@ -1,19 +1,23 @@
 <?php
 session_start();
-if (!isset($_SESSION['patient_id'])) {
+if (!isset($_SESSION["patient_id"])) {
     header("Location: login.php");
-    exit;
+    exit();
 }
 
-require 'db.php';
+require "db.php";
 
-$id = $_SESSION['patient_id'];
-$stmt = $pdo->prepare("SELECT first_name, last_name FROM patients WHERE id = ?");
+$id = $_SESSION["patient_id"];
+$stmt = $pdo->prepare(
+    "SELECT first_name, last_name FROM patients WHERE id = ?",
+);
 $stmt->execute([$id]);
 $patient = $stmt->fetch();
 
 // Load distinct specializations from the DB (no duplicates)
-$specStmt = $pdo->query("SELECT DISTINCT specialization FROM doctors ORDER BY specialization");
+$specStmt = $pdo->query(
+    "SELECT DISTINCT specialization FROM doctors ORDER BY specialization",
+);
 $specializations = $specStmt->fetchAll(PDO::FETCH_COLUMN);
 ?>
 
@@ -43,12 +47,25 @@ $specializations = $specStmt->fetchAll(PDO::FETCH_COLUMN);
         }
         .search-btn:hover { background:#218838; }
         .top { font-size: 24px; font-weight: bold; margin-bottom: 20px; cursor:pointer; }
+        .back {
+            /* Keep the display: inline-block; for centering via text-align: center */
+            display: inline-block;
+            /* Adjust margin-top for spacing inside the container */
+            margin-top: 15px;
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
     <div class="top" onclick="window.location.href='patient_home.php'">HOSPITAL</div>
 
-    <h2>Pacientas: <?= htmlspecialchars($patient['first_name']) ?> <?= htmlspecialchars($patient['last_name']) ?></h2>
+    <h2>Pacientas: <?= htmlspecialchars(
+        $patient["first_name"],
+    ) ?> <?= htmlspecialchars($patient["last_name"]) ?></h2>
 
     <!-- Search box (top-right) -->
     <div style="position: absolute; top: 12px; right: 12px;">
@@ -61,8 +78,12 @@ $specializations = $specStmt->fetchAll(PDO::FETCH_COLUMN);
     <div class="container">
         <h3>Pasirinkite gydytojo specializaciją:</h3>
         <?php foreach ($specializations as $spec): ?>
-            <a class="specialization" href="doctor_list.php?specialization=<?= urlencode($spec) ?>"><?= htmlspecialchars($spec) ?></a>
+            <a class="specialization" href="doctor_list.php?specialization=<?= urlencode(
+                $spec,
+            ) ?>"><?= htmlspecialchars($spec) ?></a>
         <?php endforeach; ?>
+    <a href="patient_home.php" class="back">Grįžti atgal</a>
     </div>
+
 </body>
 </html>

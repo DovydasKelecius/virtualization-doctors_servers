@@ -1,50 +1,129 @@
 <?php
 session_start();
-if (!isset($_SESSION['patient_id'])) {
+if (!isset($_SESSION["patient_id"])) {
     header("Location: login.php");
-    exit;
+    exit();
 }
 
-$host = getenv('DB_HOST') ?: '193.219.91.104';
-$port = getenv('DB_PORT') ?: '3545';
-$dbname = getenv('DB_NAME') ?: 'hospital';
-$user = getenv('DB_USER') ?: 'hospital_owner';
-$password = getenv('DB_PASSWORD') ?: 'iLoveUnix';
+// NOTE: Using a 'require "db.php"' file is highly recommended
+// to centralize database connection logic.
+$host = getenv("DB_HOST") ?: "193.219.91.104";
+$port = getenv("DB_PORT") ?: "3545";
+$dbname = getenv("DB_NAME") ?: "hospital";
+$user = getenv("DB_USER") ?: "hospital_owner";
+$password = getenv("DB_PASSWORD") ?: "iLoveUnix";
 
-$pdo = new PDO("pgsql:host=$host;port=$port;dbname=$dbname", $user, $password);
-$stmt = $pdo->prepare("SELECT * FROM patients WHERE id = ?");
-$stmt->execute([$_SESSION['patient_id']]);
-$patient = $stmt->fetch(PDO::FETCH_ASSOC);
+try {
+    $pdo = new PDO(
+        "pgsql:host=$host;port=$port;dbname=$dbname",
+        $user,
+        $password,
+    );
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $stmt = $pdo->prepare("SELECT * FROM patients WHERE id = ?");
+    $stmt->execute([$_SESSION["patient_id"]]);
+    $patient = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$patient) {
+        // Handle case where patient data is missing
+        header("Location: logout.php");
+        exit();
+    }
+} catch (PDOException $e) {
+    die("Database connection error.");
+}
 ?>
 <!DOCTYPE html>
 <html lang="lt">
 <head>
   <meta charset="UTF-8">
-  <title>Pacientas</title>
+  <title>Pacientas - Pagrindinis</title>
   <style>
-    body { font-family: Arial; background: #f2f2f2; text-align: center; padding-top: 40px; }
-    h1 { margin-bottom: 10px; }
-    .info { margin-bottom: 30px; font-weight: bold; }
-    .btn {
-      display: inline-block;
-      padding: 12px 20px;
-      background: #007bff;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 5px;
-      margin: 5px;
+    /* 🎨 Global Styling and Centering */
+    body {
+        font-family: Arial, sans-serif;
+        background: #f8f9fa;
+        text-align: center;
+        padding-top: 40px;
     }
-    .logout { background: #dc3545; }
-    .btn-secondary { background: #6c757d; }
+    h1 {
+        margin-bottom: 5px;
+        color: #343a40;
+    }
+    .info {
+        margin-bottom: 30px;
+        font-weight: bold;
+        font-size: 1.1em;
+        color: #007bff; /* Highlight patient name */
+    }
+
+    /* 🧱 Button Container for Alignment */
+    .button-group {
+        display: inline-block; /* Makes the group center via text-align: center on body */
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+        /* Set a standard width for the entire button block */
+        width: 280px;
+        margin: 0 auto;
+    }
+
+    /* 🔘 Individual Button Styling */
+    .btn {
+        display: block; /* Important: Forces buttons to stack vertically */
+        width: 100%; /* Fills the container width */
+        padding: 12px 0;
+        text-align: center;
+        text-decoration: none;
+        border-radius: 5px;
+        margin: 10px 0; /* Vertical margin for spacing between buttons */
+        font-weight: bold;
+        transition: background-color 0.2s;
+    }
+
+    /* Primary Actions */
+    .btn-primary {
+        background: #007bff;
+        color: #fff;
+    }
+    .btn-primary:hover {
+        background: #0056b3;
+    }
+
+    /* Secondary Action (My Appointments) */
+    .btn-secondary {
+        background: #6c757d;
+        color: #fff;
+    }
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+
+    /* Logout Button (Danger/Red) */
+    .btn-danger {
+        background: #dc3545;
+        color: #fff;
+        margin-top: 20px; /* Extra space before logout */
+    }
+    .btn-danger:hover {
+        background: #c82333;
+    }
   </style>
 </head>
 <body>
   <h1>HOSPITAL</h1>
-  <div class="info">Pacientas: <?= htmlspecialchars($patient['first_name'].' '.$patient['last_name']) ?></div>
+  <div class="info">Sveiki, <?= htmlspecialchars(
+      $patient["first_name"],
+  ) ?></div>
 
-  <a href="patient_card.php" class="btn">Paciento kortelė</a>
-  <a href="doctor_registration.php" class="btn">Registracija pas daktarą</a>
-  <a href="my_appointments.php" class="btn btn-secondary">Mano vizitai</a>
-  <a href="logout.php" class="btn logout">Atsijungti</a>
+  <div class="button-group">
+    <a href="patient_card.php" class="btn btn-primary">Paciento kortelė</a>
+    <a href="doctor_registration.php" class="btn btn-primary">Registracija pas daktarą</a>
+    <a href="my_appointments.php" class="btn btn-secondary">Mano vizitai</a>
+    <a href="logout.php" class="btn btn-danger">Atsijungti</a>
+  </div>
 </body>
 </html>
