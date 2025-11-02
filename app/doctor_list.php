@@ -8,14 +8,14 @@ if (!isset($_SESSION['patient_id'])) {
 require 'db.php';
 
 $specialization = $_GET['specialization'] ?? '';
-if (empty($specialization)) {
-    header("Location: doctor_registration.php");
-    exit;
-}
 
-// Get all doctors for this specialization
-$stmt = $pdo->prepare("SELECT * FROM doctors WHERE specialization = ?");
-$stmt->execute([$specialization]);
+// Get doctors: if a specialization is provided, filter by it; otherwise return all doctors
+if (!empty($specialization)) {
+    $stmt = $pdo->prepare("SELECT * FROM doctors WHERE specialization = ?");
+    $stmt->execute([$specialization]);
+} else {
+    $stmt = $pdo->query("SELECT * FROM doctors ORDER BY last_name, first_name");
+}
 $doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get patient info for header
@@ -57,8 +57,8 @@ $patient = $pstmt->fetch(PDO::FETCH_ASSOC);
     </tr>
     <?php foreach ($doctors as $d): ?>
     <tr>
-        <td><?= htmlspecialchars($d['name']) ?></td>
-        <td><?= htmlspecialchars($d['work_time']) ?></td>
+        <td><?= htmlspecialchars(($d['first_name'] ?? '') . ' ' . ($d['last_name'] ?? '')) ?></td>
+        <td><?= htmlspecialchars((isset($d['work_start']) ? substr($d['work_start'],0,5) : '') . ' - ' . (isset($d['work_end']) ? substr($d['work_end'],0,5) : '')) ?></td>
         <td>
             <a href="doctor_details.php?doctor_id=<?= htmlspecialchars($d['id']) ?>" class="btn">Registruotis</a>
         </td>
