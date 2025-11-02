@@ -42,12 +42,20 @@ $hstmt = $pdo->prepare("
 $hstmt->execute([$patient_id]);
 $history = $hstmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Get medical records (entered by doctors)
+// Get medical records (entered by doctors, with joins)
 $rstmt = $pdo->prepare("
-    SELECT event, diagnosis, created_at
-    FROM medical_records
-    WHERE patient_id = ?
-    ORDER BY created_at DESC
+    SELECT 
+        mr.event, 
+        mr.diagnosis, 
+        mr.created_at,
+        d.first_name AS doctor_first_name,
+        d.last_name AS doctor_last_name,
+        a.appointment_date AS related_appointment
+    FROM medical_records mr
+    LEFT JOIN doctors d ON mr.doctor_id = d.id
+    LEFT JOIN appointments a ON mr.appointment_id = a.id
+    WHERE mr.patient_id = ?
+    ORDER BY mr.created_at DESC
 ");
 $rstmt->execute([$patient_id]);
 $records = $rstmt->fetchAll(PDO::FETCH_ASSOC);
@@ -60,7 +68,7 @@ $records = $rstmt->fetchAll(PDO::FETCH_ASSOC);
 <style>
   body { font-family: Arial; background:#f8f9fa; text-align:center; padding:40px; }
   .card { background:white; display:inline-block; padding:25px; border-radius:10px;
-          box-shadow:0 0 10px rgba(0,0,0,0.1); width:550px; text-align:left; }
+          box-shadow:0 0 10px rgba(0,0,0,0.1); width:600px; text-align:left; }
   h1 { cursor:pointer; }
   h2 { text-align:center; }
   .info-row { margin:8px 0; }
@@ -122,12 +130,16 @@ $records = $rstmt->fetchAll(PDO::FETCH_ASSOC);
       <table>
         <tr>
           <th>Data</th>
+          <th>Gydytojas</th>
+          <th>Susijęs vizitas</th>
           <th>Įvykis</th>
           <th>Išrašas</th>
         </tr>
         <?php foreach ($records as $r): ?>
           <tr>
             <td><?= date('Y-m-d H:i', strtotime($r['created_at'])) ?></td>
+            <td><?= htmlspecialchars($r['doctor_first_name'].' '.$r['doctor_last_name']) ?></td>
+            <td><?= $r['related_appointment'] ? date('Y-m-d H:i', strtotime($r['related_appointment'])) : '-' ?></td>
             <td><?= htmlspecialchars($r['event']) ?></td>
             <td><?= htmlspecialchars($r['diagnosis']) ?></td>
           </tr>
