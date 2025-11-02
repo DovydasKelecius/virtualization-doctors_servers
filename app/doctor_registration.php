@@ -11,6 +11,10 @@ $id = $_SESSION['patient_id'];
 $stmt = $pdo->prepare("SELECT first_name, last_name FROM patients WHERE id = ?");
 $stmt->execute([$id]);
 $patient = $stmt->fetch();
+
+// Load distinct specializations from the DB (no duplicates)
+$specStmt = $pdo->query("SELECT DISTINCT specialization FROM doctors ORDER BY specialization");
+$specializations = $specStmt->fetchAll(PDO::FETCH_COLUMN);
 ?>
 
 <!DOCTYPE html>
@@ -51,14 +55,9 @@ $patient = $stmt->fetch();
 
     <div class="container">
         <h3>Pasirinkite gydytojo specializaciją:</h3>
-        <a class="specialization" href="doctor_list.php?specialization=Kardiologas">Kardiologas</a>
-        <a class="specialization" href="doctor_list.php?specialization=Psichologas">Psichologas</a>
-        <a class="specialization" href="doctor_list.php?specialization=Pediatras">Pediatras</a>
-        <a class="specialization" href="doctor_list.php?specialization=Odontologas">Odontologas</a>
-        <a class="specialization" href="doctor_list.php?specialization=Dermatologas">Dermatologas</a>
-        <a class="specialization" href="doctor_list.php?specialization=Ginekologas">Ginekologas</a>
-        <a class="specialization" href="doctor_list.php?specialization=Sekso daktaras">Sekso daktaras</a>
-        <a class="specialization" href="doctor_list.php?specialization=Chirurgas">Chirurgas</a>
+        <?php foreach ($specializations as $spec): ?>
+            <a class="specialization" href="doctor_list.php?specialization=<?= urlencode($spec) ?>"><?= htmlspecialchars($spec) ?></a>
+        <?php endforeach; ?>
     </div>
 </body>
 </html>
