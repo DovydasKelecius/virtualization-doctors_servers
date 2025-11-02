@@ -31,6 +31,20 @@ $p = $stmt->fetch(PDO::FETCH_ASSOC);
 </head>
 <body>
   <h1>HOSPITAL</h1>
+  <?php if (isset($_SESSION['error'])): ?>
+    <div style="color: red; margin-bottom: 20px;">
+        <?= htmlspecialchars($_SESSION['error']) ?>
+        <?php unset($_SESSION['error']); ?>
+    </div>
+  <?php endif; ?>
+  
+  <?php if (isset($_SESSION['message'])): ?>
+    <div style="color: green; margin-bottom: 20px;">
+        <?= htmlspecialchars($_SESSION['message']) ?>
+        <?php unset($_SESSION['message']); ?>
+    </div>
+  <?php endif; ?>
+  
   <form action="update_patient.php" method="POST">
     <label>Vardas:</label>
     <input type="text" value="<?= htmlspecialchars($p['first_name']) ?>" disabled>
