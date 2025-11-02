@@ -34,7 +34,8 @@ try {
     $history = $history_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
-    die("Database connection error: " . $e->getMessage());
+    // This now catches query execution errors, as connection errors are handled in db.php
+    die("Database query error: " . $e->getMessage());
 }
 ?>
 <!DOCTYPE html>

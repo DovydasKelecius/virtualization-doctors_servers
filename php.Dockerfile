@@ -15,6 +15,7 @@ WORKDIR /var/www/html
 # Adjust PHP-FPM configuration to listen on TCP port 9000 (standard for Docker)
 # This is necessary because the default Debian/Ubuntu config often uses a Unix socket.
 RUN sed -i 's/listen = \/run\/php\/php8.4-fpm.sock/listen = 9000/' /etc/php/8.4/fpm/pool.d/www.conf
+RUN echo "clear_env = no" >> /etc/php/8.4/fpm/pool.d/www.conf
 
 # Expose the default PHP-FPM port
 EXPOSE 9000

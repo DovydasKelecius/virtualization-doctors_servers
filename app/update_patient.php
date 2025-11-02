@@ -11,11 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     exit();
 }
 
-$host = getenv("DB_HOST") ?: "193.219.91.104";
-$port = getenv("DB_PORT") ?: "3545";
-$dbname = getenv("DB_NAME") ?: "hospital";
-$user = getenv("DB_USER") ?: "hospital_owner";
-$password = getenv("DB_PASSWORD") ?: "iLoveUnix";
+require "db.php"; 
 
 try {
     $pdo = new PDO(
