@@ -41,6 +41,14 @@ $patient = $stmt->fetch();
 
     <h2>Pacientas: <?= htmlspecialchars($patient['first_name']) ?> <?= htmlspecialchars($patient['last_name']) ?></h2>
 
+    <!-- Search box (top-right) -->
+    <div style="position: absolute; top: 12px; right: 12px;">
+        <form action="doctor_list.php" method="GET" style="display:flex; align-items:center;">
+            <input type="text" name="q" placeholder="Ieškoti gydytojo arba specializacijos" style="padding:8px 10px; width:260px; border:1px solid #ccc; border-radius:4px;" />
+            <button type="submit" style="margin-left:8px; padding:8px 12px; border-radius:4px; border:none; background:#007bff; color:#fff; cursor:pointer;">Ieškoti</button>
+        </form>
+    </div>
+
     <div class="container">
         <h3>Pasirinkite gydytojo specializaciją:</h3>
         <a class="specialization" href="doctor_list.php?specialization=Kardiologas">Kardiologas</a>

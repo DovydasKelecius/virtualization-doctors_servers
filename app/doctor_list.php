@@ -8,10 +8,15 @@ if (!isset($_SESSION['patient_id'])) {
 require 'db.php';
 
 $specialization = $_GET['specialization'] ?? '';
+$q = trim($_GET['q'] ?? '');
 
-// Get doctors: if a specialization is provided, filter by it; otherwise return all doctors
-if (!empty($specialization)) {
-    $stmt = $pdo->prepare("SELECT * FROM doctors WHERE specialization = ?");
+// If a search query is provided, search first_name, last_name, and specialization (case-insensitive)
+if ($q !== '') {
+    $like = "%" . $q . "%";
+    $stmt = $pdo->prepare("SELECT * FROM doctors WHERE first_name ILIKE ? OR last_name ILIKE ? OR specialization ILIKE ? ORDER BY last_name, first_name");
+    $stmt->execute([$like, $like, $like]);
+} elseif (!empty($specialization)) {
+    $stmt = $pdo->prepare("SELECT * FROM doctors WHERE specialization = ? ORDER BY last_name, first_name");
     $stmt->execute([$specialization]);
 } else {
     $stmt = $pdo->query("SELECT * FROM doctors ORDER BY last_name, first_name");
@@ -52,13 +57,15 @@ $patient = $pstmt->fetch(PDO::FETCH_ASSOC);
       <table>
     <tr>
         <th>Vardas, pavardė</th>
+        <th>Daktaro specialybė</th>
         <th>Darbo laikas</th>
         <th>Veiksmas</th>
     </tr>
     <?php foreach ($doctors as $d): ?>
     <tr>
-        <td><?= htmlspecialchars(($d['first_name'] ?? '') . ' ' . ($d['last_name'] ?? '')) ?></td>
-        <td><?= htmlspecialchars((isset($d['work_start']) ? substr($d['work_start'],0,5) : '') . ' - ' . (isset($d['work_end']) ? substr($d['work_end'],0,5) : '')) ?></td>
+    <td><?= htmlspecialchars(($d['first_name'] ?? '') . ' ' . ($d['last_name'] ?? '')) ?></td>
+    <td><?= htmlspecialchars($d['specialization'] ?? '') ?></td>
+    <td><?= htmlspecialchars((isset($d['work_start']) ? substr($d['work_start'],0,5) : '') . ' - ' . (isset($d['work_end']) ? substr($d['work_end'],0,5) : '')) ?></td>
         <td>
             <a href="doctor_details.php?doctor_id=<?= htmlspecialchars($d['id']) ?>" class="btn">Registruotis</a>
         </td>
