@@ -25,14 +25,26 @@ $patient = $stmt->fetch(PDO::FETCH_ASSOC);
     body { font-family: Arial; background: #f2f2f2; text-align: center; padding-top: 40px; }
     h1 { margin-bottom: 10px; }
     .info { margin-bottom: 30px; font-weight: bold; }
-    .btn { display: inline-block; padding: 12px 20px; background: #007bff; color: #fff; text-decoration: none; border-radius: 5px; }
-    .logout { background: #dc3545; margin-left: 20px; }
+    .btn {
+      display: inline-block;
+      padding: 12px 20px;
+      background: #007bff;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
+      margin: 5px;
+    }
+    .logout { background: #dc3545; }
+    .btn-secondary { background: #6c757d; }
   </style>
 </head>
 <body>
   <h1>HOSPITAL</h1>
   <div class="info">Pacientas: <?= htmlspecialchars($patient['first_name'].' '.$patient['last_name']) ?></div>
+
   <a href="patient_card.php" class="btn">Paciento kortelė</a>
+  <a href="doctor_registration.php" class="btn">Registracija pas daktarą</a>
+  <a href="my_appointments.php" class="btn btn-secondary">Mano vizitai</a>
   <a href="logout.php" class="btn logout">Atsijungti</a>
 </body>
 </html>

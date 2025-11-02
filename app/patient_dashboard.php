@@ -67,6 +67,8 @@ $patient = $stmt->fetch(PDO::FETCH_ASSOC);
     <form action="logout.php" method="POST">
       <button class="logout" type="submit">Atsijungti</button>
     </form>
+    <button onclick="window.location.href='doctor_registration.php'">Registracija pas daktarą</button>
+
   </div>
 </body>
 </html>
