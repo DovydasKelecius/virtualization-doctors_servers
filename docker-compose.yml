@@ -8,11 +8,11 @@ services:
       - ./app:/var/www/html
       - ./static-files:/var/www/html/static
     environment:
-      - DB_HOST=host.docker.internal
-      - DB_PORT=5433
+      - DB_HOST=193.219.91.104
+      - DB_PORT=3545
       - DB_NAME=hospital
-      - DB_USER=postgres
-      - DB_PASSWORD=159511
+      - DB_USER=hospital_owner
+      - DB_PASSWORD=iLoveUnix
     restart: always
 
   web:

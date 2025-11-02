@@ -5,11 +5,11 @@ if (!isset($_SESSION['patient_id'])) {
     exit;
 }
 
-$host = getenv('DB_HOST') ?: 'host.docker.internal';
-$port = getenv('DB_PORT') ?: '5433';
+$host = getenv('DB_HOST') ?: '193.219.91.104';
+$port = getenv('DB_PORT') ?: '3545';
 $dbname = getenv('DB_NAME') ?: 'hospital';
-$user = getenv('DB_USER') ?: 'postgres';
-$password = getenv('DB_PASSWORD') ?: '159511';
+$user = getenv('DB_USER') ?: 'hospital_owner';
+$password = getenv('DB_PASSWORD') ?: 'iLoveUnix';
 
 $pdo = new PDO("pgsql:host=$host;port=$port;dbname=$dbname", $user, $password);
 $stmt = $pdo->prepare("SELECT * FROM patients WHERE id = ?");
