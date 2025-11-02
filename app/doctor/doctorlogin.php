@@ -12,9 +12,10 @@ if (isset($_SESSION['doctor_id'])) {
     <meta charset="UTF-8">
     <title>Darbuotojo prisijungimas</title>
     <style>
+        /* Base Styling from patient_card.php */
         body { 
-            font-family: Arial; 
-            background: #f7f7f7; 
+            font-family: Arial, sans-serif; 
+            background: #f8f9fa; 
             margin: 0;
             display: flex;
             flex-direction: column;
@@ -22,19 +23,24 @@ if (isset($_SESSION['doctor_id'])) {
             min-height: 100vh;
             padding-top: 50px;
         }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
-        }
         h1 { 
             text-align: center; 
             margin-bottom: 30px;
             cursor: pointer;
         }
+        
+        /* Card Container */
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px; /* Standardized width */
+            box-sizing: border-box;
+        }
+        
+        /* Form Styling */
         form {
             display: flex;
             flex-direction: column;
@@ -46,39 +52,63 @@ if (isset($_SESSION['doctor_id'])) {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
+            color: #343a40;
         }
         input {
             width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
             box-sizing: border-box;
         }
+        
+        /* Button Styling */
         .btn {
-            background: #28a745;
+            background: #007bff; /* Blue button style for main action */
             color: white;
-            padding: 10px;
+            padding: 12px;
             border: none;
-            border-radius: 4px;
+            border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
-            margin-top: 10px;
+            margin-top: 15px;
+            font-weight: bold;
+            transition: background-color 0.2s;
         }
         .btn:hover {
-            background: #218838;
+            background: #0056b3;
         }
+        
+        /* Error Styling */
         .error {
-            color: red;
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 5px;
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            font-weight: bold;
         }
+        
+        /* Back Link Styling */
         .back {
+            display: block; 
+            width: 100%;
+            max-width: 400px;
             margin-top: 20px;
-            color: #666;
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
             text-decoration: none;
+            box-sizing: border-box;
+            transition: background-color 0.2s;
+            font-weight: bold;
+            text-align: center;
         }
         .back:hover {
-            text-decoration: underline;
+            background: #5a6268;
         }
     </style>
 </head>
@@ -103,6 +133,6 @@ if (isset($_SESSION['doctor_id'])) {
             <button type="submit" class="btn">Prisijungti</button>
         </form>
     </div>
-    <a href="../index.php" class="back">← Grįžti į pagrindinį puslapį</a>
+    <a href="../index.php" class="back">Grįžti į pagrindinį puslapį</a>
 </body>
 </html>
