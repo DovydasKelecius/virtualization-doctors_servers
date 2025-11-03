@@ -1,226 +1,287 @@
+<?php session_start(); ?>
 <!DOCTYPE html>
 <html lang="lt">
 <head>
   <meta charset="UTF-8">
   <title>Registracija - Hospital</title>
   <style>
-    /* Base Styling from patient_card.php */
-    body { 
-        font-family: Arial, sans-serif; 
-        text-align: center; 
-        background: #f8f9fa; 
-        padding-top: 40px; 
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background: #f8f9fa;
+        padding-top: 40px;
     }
     h1 {
         cursor: pointer;
         margin-bottom: 20px;
     }
-
-    /* Form Container (Card) */
-    .form-container { /* Pridėtas bendras konteineris centravimui */
+    .form-container {
         width: 90%;
         max-width: 550px;
         margin: 0 auto;
     }
-
-    form { 
-        text-align: left; 
-        background: white; 
-        padding: 30px; 
-        border-radius: 10px; 
+    form {
+        text-align: left;
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        width: 100%; /* Uztikrina kad forma uzims visa konteinerio ploti */
+        width: 100%;
         box-sizing: border-box;
     }
-    
-    /* Input Group for 2-Column Layout */
     .input-group {
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;
-        margin-bottom: 5px;
+        gap: 0 10px;
     }
     .input-item {
-        width: calc(50% - 10px);
-        margin-bottom: 5px;
+        width: calc(50% - 5px);
+        margin-bottom: 18px;
+        position: relative;
     }
     .full-width {
         width: 100%;
     }
-
-    /* Input/Label Styling */
-    label { 
-        display: block; 
-        margin-top: 15px; 
-        font-weight: bold; 
+    label {
+        display: block;
+        font-weight: bold;
         color: #343a40;
+        margin-bottom: 5px;
     }
-    input, select { 
-        width: 100%; 
-        padding: 10px; 
-        margin-top: 5px;
-        border: 1px solid #ced4da; 
+    input, select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ced4da;
         border-radius: 5px;
         box-sizing: border-box;
+        font-size: 14px;
     }
-    
-    /* Button Styling */
-    button { 
-        width: 100%; 
-        padding: 12px; 
-        margin-top: 25px; 
-        background-color: #007bff; /* Blue button style for main action */
-        color: white; 
-        border: none; 
-        border-radius: 5px; 
-        cursor: pointer; 
+    input.error, select.error {
+        border-color: #e55353;
+    }
+    .error-msg {
+        font-size: 12px;
+        color: #e55353;
+        margin-top: 4px;
+        display: none;
+    }
+    .helper {
+        font-size: 11px;
+        color: #666;
+        margin-top: 3px;
+        display: none;
+    }
+    button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
         font-size: 16px;
         font-weight: bold;
-        transition: background-color 0.2s;
     }
-    button:hover:not(:disabled) { 
-        background-color: #0056b3; 
+    button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
     }
-    button:disabled { 
-        background-color: #ccc; 
-        cursor: not-allowed; 
-    }
-    
-    /* Error Styling */
-    .error { 
-        color: #721c24;
-        background-color: #f8d7da;
-        border: 1px solid #f5c6cb;
-        padding: 10px;
-        border-radius: 5px;
-        text-align: center;
-        margin-bottom: 20px; /* Pakeista is margin-top: 20px */
-        font-weight: bold;
-    }
-    
-    /* Back Link Styling (Dabar už formos ribų) */
     .back {
-      display: block; 
-      width: 100%; /* Paims 550px is .form-container */
-      margin-top: 20px;
-      background: #6c757d;
-      color: white;
-      padding: 12px 20px; /* Padidinau padding, kad atrodytų kaip mygtukas */
-      border-radius: 5px;
-      text-decoration: none;
-      box-sizing: border-box;
-      transition: background-color 0.2s;
-      font-weight: bold;
-      text-align: center;
-      
-    }
-    .back:hover {
-        background: #5a6268;
+        display: block;
+        width: 100%;
+        margin-top: 20px;
+        background: #6c757d;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        text-align: center;
     }
   </style>
 </head>
 <body>
-  <?php session_start(); ?>
   <h1 onclick="window.location.href='index.php'">HOSPITAL</h1>
 
   <div class="form-container">
-    
-    <?php
-    if (isset($_SESSION['error'])) {
-        echo "<p class='error'>" . htmlspecialchars($_SESSION['error']) . "</p>";
-        unset($_SESSION['error']);
-    }
-    ?>
+    <?php if (isset($_SESSION['error'])): ?>
+      <p style="color:#e55353; font-weight:bold; margin-bottom:15px;">
+        <?= htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?>
+      </p>
+    <?php endif; ?>
 
-    <form id="registerForm" action="register_process.php" method="POST">
-      
+    <form id="registerForm" action="register_process.php" method="POST" novalidate>
       <div class="input-group">
-          <div class="input-item">
-              <label>Vardas:</label>
-              <input type="text" name="first_name" required>
-          </div>
-          <div class="input-item">
-              <label>Pavardė:</label>
-              <input type="text" name="last_name" required>
-          </div>
+        <div class="input-item">
+          <label for="first_name">Vardas:</label>
+          <input type="text" id="first_name" name="first_name" maxlength="30" required>
+          <div class="error-msg" id="err_first_name"></div>
+        </div>
+        <div class="input-item">
+          <label for="last_name">Pavardė:</label>
+          <input type="text" id="last_name" name="last_name" maxlength="30" required>
+          <div class="error-msg" id="err_last_name"></div>
+        </div>
       </div>
 
       <div class="input-group">
-          <div class="input-item full-width">
-              <label>Lytis:</label>
-              <select name="gender" required>
-                  <option value="">-- Pasirinkite lytį --</option>
-                  <option value="Vyras">Vyras</option>
-                  <option value="Moteris">Moteris</option>
-                  <option value="Kita">Kita</option>
-                  <option value="Nenoriu sakyti">Nenoriu sakyti</option>
-              </select>
-          </div>
+        <div class="input-item full-width">
+          <label for="gender">Lytis:</label>
+          <select id="gender" name="gender" required>
+            <option value="">-- Pasirinkite lytį --</option>
+            <option value="Vyras">Vyras</option>
+            <option value="Moteris">Moteris</option>
+            <option value="Kita">Kita</option>
+            <option value="Nenoriu sakyti">Nenoriu sakyti</option>
+          </select>
+          <div class="error-msg" id="err_gender"></div>
+        </div>
       </div>
 
       <div class="input-group">
-          <div class="input-item full-width">
-              <label>El. paštas:</label>
-              <input type="email" name="email" required>
-          </div>
+        <div class="input-item full-width">
+          <label for="email">El. paštas:</label>
+          <input type="email" id="email" name="email" maxlength="40" required>
+          <div class="error-msg" id="err_email"></div>
+        </div>
       </div>
 
       <div class="input-group">
-          <div class="input-item full-width">
-              <label>Asmens kodas:</label>
-              <input type="text" name="personal_code" id="personal_code" required>
-          </div>
+        <div class="input-item full-width">
+          <label for="personal_code">Asmens kodas:</label>
+          <input type="text" id="personal_code" name="personal_code" maxlength="11" required>
+          <div class="error-msg" id="err_personal_code"></div>
+        </div>
       </div>
 
       <div class="input-group">
-          <div class="input-item">
-              <label>Slaptažodis:</label>
-              <input type="password" name="password" id="password" required>
-          </div>
-          <div class="input-item">
-              <label>Pakartokite slaptažodį:</label>
-              <input type="password" name="password_repeat" id="password_repeat" required>
-          </div>
+        <div class="input-item">
+          <label for="password">Slaptažodis:</label>
+          <input type="password" id="password" name="password" required>
+          <div class="helper" id="help_password">Slaptažodis turi būti ≥ 6 simboliai</div>
+          <div class="error-msg" id="err_password"></div>
+        </div>
+        <div class="input-item">
+          <label for="password_repeat">Pakartokite slaptažodį:</label>
+          <input type="password" id="password_repeat" name="password_repeat" required>
+          <div class="error-msg" id="err_password_repeat"></div>
+        </div>
       </div>
 
       <div class="input-group">
-          <div class="input-item full-width">
-              <label>Telefono nr.:</label>
-              <input type="text" name="phone" id="phone" required>
-          </div>
+        <div class="input-item full-width">
+          <label for="phone">Telefono nr.:</label>
+          <input type="text" id="phone" name="phone" required>
+          <div class="error-msg" id="err_phone"></div>
+        </div>
       </div>
 
       <button type="submit" id="submitBtn" disabled>Registruotis</button>
-      
     </form>
-    
-    <a href="../index.php" class="back">Grįžti į pagrindinį puslapį</a>
 
+    <a href="../index.php" class="back">Grįžti į pagrindinį puslapį</a>
   </div>
 
   <script>
-    const form = document.getElementById('registerForm');
-    const submitBtn = document.getElementById('submitBtn');
+  const form = document.getElementById('registerForm');
+  const submitBtn = document.getElementById('submitBtn');
 
-    function validateForm() {
-      const pass = document.getElementById('password').value;
-      const repeat = document.getElementById('password_repeat').value;
-      const code = document.getElementById('personal_code').value;
-      const phone = document.getElementById('phone').value;
+  const fields = [
+    'first_name', 'last_name', 'gender',
+    'email', 'personal_code', 'password',
+    'password_repeat', 'phone'
+  ];
 
-      // Check all fields for content before validating patterns
-      const allFieldsFilled = [...form.querySelectorAll('input[required], select[required]')].every(field => field.value.trim() !== '');
+  // Add input + blur listeners
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('blur', () => validateField(id));
+    el.addEventListener('input', () => {
+      const err = document.getElementById('err_' + id);
+      err.style.display = 'none';
+      el.classList.remove('error');
+      validateForm();
+    });
+  });
 
-      const passMatch = pass === repeat;
-      // Added a check for minimum password length for better UX, e.g., 6 chars
-      const passLength = pass.length >= 6; 
-      const codeValid = /^\d{11}$/.test(code);
-      // Pataisytas telefono numerio patikrinimas (leistinas formatas +370XXXXXXXX arba XXXXXXXXX)
-      const phoneValid = /^(\+370\d{8}|\d{9})$/.test(phone); 
+  // Show password hint only while focused
+  const passwordInput = document.getElementById('password');
+  const passwordHelper = document.getElementById('help_password');
+  passwordInput.addEventListener('focus', () => passwordHelper.style.display = 'block');
+  passwordInput.addEventListener('blur', () => passwordHelper.style.display = 'none');
 
-      submitBtn.disabled = !(allFieldsFilled && passMatch && passLength && codeValid && phoneValid);
+  function validateField(id) {
+    const el = document.getElementById(id);
+    const err = document.getElementById('err_' + id);
+    const value = el.value.trim();
+    let message = '';
+
+    const nameRegex = /^[A-Za-zĄČĘĖĮŠŲŪŽąčęėįšųūž]+$/u; // Lithuanian letters only
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    const phoneRegex = /^(\+370\d{8}|\d{9})$/;
+
+    switch (id) {
+      case 'first_name':
+      case 'last_name':
+        if (!value) message = 'Šis laukelis privalomas';
+        else if (!nameRegex.test(value)) message = 'Leidžiamos tik raidės';
+        else if (value.length === 29) message = 'Pasiektas simbolių limitas (30)';
+        break;
+
+      case 'gender':
+        if (!value) message = 'Pasirinkite lytį';
+        break;
+
+      case 'email':
+        if (!value) message = 'Įveskite el. paštą';
+        else if (value.length > 40) message = 'El. paštas per ilgas (max 40)';
+        else if (!emailRegex.test(value)) message = 'Neteisingas el. pašto formatas';
+        break;
+
+      case 'personal_code':
+        if (!/^\d{11}$/.test(value)) message = 'Asmens kodas turi būti 11 skaitmenų';
+        break;
+
+      case 'password':
+        if (value.length < 6) message = 'Slaptažodis per trumpas';
+        break;
+
+      case 'password_repeat':
+        const pass = document.getElementById('password').value;
+        if (value !== pass) message = 'Slaptažodžiai nesutampa';
+        break;
+
+      case 'phone':
+        if (!phoneRegex.test(value)) message = 'Netinkamas telefono formatas';
+        break;
     }
-    form.addEventListener('input', validateForm);
-  </script>
+
+    if (message) {
+      err.textContent = message;
+      err.style.display = 'block';
+      el.classList.add('error');
+    } else {
+      err.textContent = '';
+      err.style.display = 'none';
+      el.classList.remove('error');
+    }
+
+    validateForm();
+  }
+
+  function validateForm() {
+    let ok = true;
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      const err = document.getElementById('err_' + id);
+      if (el.value.trim() === '' || (err && err.style.display === 'block')) {
+        ok = false;
+      }
+    });
+    submitBtn.disabled = !ok;
+  }
+</script>
+
 </body>
 </html>
