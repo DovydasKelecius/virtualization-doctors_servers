@@ -194,7 +194,7 @@
       
     </form>
     
-    <a href="../index.php" class="back">← Grįžti į pagrindinį puslapį</a>
+    <a href="../index.php" class="back">Grįžti į pagrindinį puslapį</a>
 
   </div>
 

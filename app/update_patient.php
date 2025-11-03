@@ -26,23 +26,43 @@ try {
     $last_name = trim($_POST["last_name"] ?? "");
     $email = filter_var($_POST["email"] ?? "", FILTER_SANITIZE_EMAIL);
     $phone = trim($_POST["phone"] ?? "");
+    $gender = trim($_POST["gender"] ?? "");
 
-    // --- Validation for Name and Surname ---
-    if (empty($first_name) || !preg_match("/^[\p{L}\s'-]+$/u", $first_name)) {
-        throw new Exception("Neteisingas vardo formatas.");
+    // --- 1. Validation for Name and Surname ---
+    // \p{L} allows any kind of letter from any language, including Lithuanian characters (ąčęėįšųūž)
+    $name_regex = "/^[\p{L}\s'-]{2,50}$/u"; // Allows 2 to 50 characters
+    
+    if (empty($first_name) || !preg_match($name_regex, $first_name)) {
+        throw new Exception("Vardas turi būti nuo 2 iki 50 raidžių ir negali turėti specialių simbolių.");
     }
-    if (empty($last_name) || !preg_match("/^[\p{L}\s'-]+$/u", $last_name)) {
-        throw new Exception("Neteisingas pavardės formatas.");
+    if (empty($last_name) || !preg_match($name_regex, $last_name)) {
+        throw new Exception("Pavardė turi būti nuo 2 iki 50 raidžių ir negali turėti specialių simbolių.");
     }
     // --- End Validation for Name and Surname ---
 
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    // --- 2. Email Validation ---
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 100) {
         throw new Exception("Neteisingas el. pašto formatas.");
     }
+    // --- End Email Validation ---
 
-    if (empty($phone)) {
-        throw new Exception("Telefono numeris negali būti tuščias.");
+    // --- 3. Phone Number Validation (Improved) ---
+    // Checks for a common international format: digits, optional +, spaces, hyphens.
+    // Length check (e.g., min 8 digits, max 20 characters including symbols)
+    $phone_clean = preg_replace("/[^0-9\+]/", "", $phone); // Remove non-digit/non-plus characters for basic check
+    
+    if (empty($phone) || !preg_match("/^[\d\s\-\+]{8,20}$/", $phone) || strlen($phone_clean) < 8) {
+        throw new Exception("Neteisingas telefono numerio formatas (turėtų būti min. 8 skaitmenys).");
     }
+    // --- End Phone Validation ---
+
+    // --- 4. Gender Validation ---
+    $valid_genders = ['Vyras', 'Moteris', 'Kita', 'Nenoriu sakyti'];
+    if (!in_array($gender, $valid_genders)) {
+        throw new Exception("Neteisinga pasirinkta lyties reikšmė.");
+    }
+    // --- End Gender Validation ---
+
 
     // Prepare and execute the update
     $stmt = $pdo->prepare("
@@ -51,7 +71,8 @@ try {
             first_name = ?,
             last_name = ?,
             email = ?,
-            phone = ?
+            phone = ?,
+            gender = ?
         WHERE id = ?
         RETURNING *
     ");
@@ -61,6 +82,7 @@ try {
         $last_name,
         $email,
         $phone,
+        $gender,
         $_SESSION["patient_id"],
     ]);
 

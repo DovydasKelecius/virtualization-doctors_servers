@@ -69,7 +69,7 @@
     <a href="login.php" class="btn btn-patient">Prisijungti (Pacientas)</a>
     <a href="register.php" class="btn btn-patient">Registruotis (Tapti pacientu)</a>
 
-    <a href="doctor/doctorlogin.php" class="btn btn-staff">Darbuotojams (Prisijungti)</a>
+    <a href="doctor/doctorlogin.php" class="btn btn-staff">Prisijungti (Darbuotojams)</a>
   </div>
 </body>
 </html>

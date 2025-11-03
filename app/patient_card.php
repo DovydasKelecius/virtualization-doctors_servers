@@ -148,6 +148,40 @@ try {
         background-color: #e9ecef;
         color: #6c757d;
     }
+    
+    /* --- New Styled Select Dropdown (Lytis) --- */
+    .input-item select[name="gender"] {
+        /* General styles, matching inputs */
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        box-sizing: border-box;
+        
+        /* Aesthetic enhancements */
+        background-color: white; 
+        appearance: none; /* Hide default arrow on most browsers */
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%236c757d' d='M10 12l-6-6h12z'/%3E%3C/svg%3E"); /* Custom SVG arrow */
+        background-repeat: no-repeat;
+        background-position: right 10px top 50%;
+        background-size: 12px;
+        
+        /* Transition for hover effect */
+        transition: border-color 0.2s, box-shadow 0.2s;
+        height: 40px; /* Adjust height to match input fields */
+        line-height: 1.5; /* Vertical alignment fix */
+    }
+
+    .input-item select[name="gender"]:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        outline: none;
+    }
+    /* --- End New Styled Select Dropdown --- */
+
 
     /* 🟢 Update Button Styling (Retained old style) */
     button[type="submit"] {
@@ -325,11 +359,15 @@ try {
                   $p["personal_code"],
               ) ?>" disabled>
           </div>
-          <div class="input-item">
-              <label>Lytis:</label>
-              <input type="text" value="<?= htmlspecialchars(
-                  $p["gender"],
-              ) ?>" disabled>
+          <div class="input-item"> 
+            <label>Lytis:</label>
+            <select name="gender" required>
+                <option value="">-- Pasirinkite lytį --</option>
+                <option value="Vyras" <?= ($p["gender"] === 'Vyras' ? 'selected' : '') ?>>Vyras</option>
+                <option value="Moteris" <?= ($p["gender"] === 'Moteris' ? 'selected' : '') ?>>Moteris</option>
+                <option value="Kita" <?= ($p["gender"] === 'Kita' ? 'selected' : '') ?>>Kita</option>
+                <option value="Nenoriu sakyti" <?= ($p["gender"] === 'Nenoriu sakyti' ? 'selected' : '') ?>>Nenoriu sakyti</option>
+            </select>
           </div>
       </div>
 
