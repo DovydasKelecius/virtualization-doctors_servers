@@ -1,0 +1,102 @@
+- name: Configure Ansible VM to run Ansible on itself
+  hosts: ansible
+  become: true
+  gather_facts: false # 1. SKIP GATHERING FACTS INITIALLY
+
+  tasks:
+    - name: Ensure /usr/bin/python3 exists
+      ansible.builtin.file:
+        src: /usr/bin/python3
+        dest: /usr/bin/python
+        state: link
+
+    - name: Wait for apt lock to be released
+      ansible.builtin.shell: |
+        while fuser /var/lib/dpkg/lock >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do
+          sleep 5
+        done
+      changed_when: false
+
+    - name: Ensure APT sources are correctly initialized
+      ansible.builtin.raw: |
+        # Back up and create new sources list
+        sudo mv /etc/apt/sources.list /etc/apt/sources.list.bak
+        # Use 'jammy' for Ubuntu 22.04. Change to 'noble' if 24.04.
+        sudo bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse" > /etc/apt/sources.list'
+        sudo bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ jammy-updates main restricted universe multiverse" >> /etc/apt/sources.list'
+        sudo bash -c 'echo "deb http://security.ubuntu.com/ubuntu/ jammy-security main restricted universe multiverse" >> /etc/apt/sources.list'
+      changed_when: true
+      
+    - name: Ensure critical APT directories exist and clear stale lock files
+      ansible.builtin.shell: |
+        # 1. Remove any old lock files just in case
+        rm -f /var/lib/dpkg/lock /var/lib/apt/lists/lock /var/cache/apt/archives/lock
+        # 2. Recreate the lists directory, which the VM template might have left missing/corrupt
+        mkdir -p /var/lib/apt/lists/
+        # 3. Force-configure any interrupted packages
+        dpkg --configure -a
+        # 4. Attempt to fix any installation issues
+        apt-get install -f -y
+      become: true
+      changed_when: false
+      args:
+        executable: /bin/bash
+
+    - name: Ensure basic Python 3 is installed
+      ansible.builtin.apt:
+        name: python3
+        state: present
+    
+    - name: Ensure critical network/security tools are installed via raw
+      ansible.builtin.raw: sudo apt install -y apt-transport-https ca-certificates dirmngr gnupg
+      changed_when: true
+      
+    - name: Force a full apt update and upgrade (to clear any dependency issues)
+      ansible.builtin.apt:
+        upgrade: full
+        update_cache: yes
+      changed_when: true
+
+    - name: Install system dependencies (git, jq, python3-setuptools, etc.)
+      ansible.builtin.apt:
+        name:
+          - curl
+          - wget
+          - git
+          - jq
+          - sshpass
+          - python3-setuptools
+          - python3-pip
+          - python3-venv
+          - sudo
+        state: present
+
+    - name: Install Ansible via apt
+      ansible.builtin.apt:
+        name: ansible
+        state: present
+
+    - name: Ensure Python virtual environment exists
+      ansible.builtin.command:
+        cmd: python3 -m venv /home/ansible/.venv
+        creates: /home/ansible/.venv
+      become: true
+      become_user: ansible 
+
+    - name: Install OpenNebula Python API (pyone) into VENV
+      ansible.builtin.pip:
+        name: pyone
+        state: present
+        virtualenv: /home/ansible/.venv
+      become: true
+      become_user: ansible #
+
+    - name: Copy Mitogen directory from local machine to VM
+      ansible.builtin.synchronize:
+        src: "../mitogen-0.3.30/" 
+        dest: "/home/ansible/mitogen-0.3.30"
+        mode: push
+        owner: yes
+        group: yes
+      become: true # Needs root access to manage permissions/copy efficiently
+      become_user: ansible # Ensure 'ansible' user owns the files

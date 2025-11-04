@@ -1,0 +1,78 @@
+---
+- name: Deploy new Ansible VM on OpenNebula
+  hosts: localhost
+  become: false
+  gather_facts: false
+  vars_files:
+    - ../vars_files/vault_pass_ansible.yml
+    - ../vars_files/sudo_pass.yml
+
+  vars:
+    ansible_become_pass: "{{ ansible_sudo_pass }}"
+    ssh_key_path: "{{ lookup('env','HOME') }}/.ssh/id_rsa.pub"
+
+
+  tasks:
+    - name: Create ansible_vm
+      community.general.one_vm:
+        api_url: "https://grid5.mif.vu.lt/cloud3/RPC2"
+        api_username: "{{ ansible_vm_user }}"
+        api_password: "{{ ansible_vm_password }}"
+        template_id: 2974
+        mode: 600
+        state: present
+        cpu: 0.2
+        vcpu: 1
+        memory: 1 GB
+        disk_size: 4 GB
+        attributes:
+          NAME: "rtfm_ansible"
+      delegate_to: localhost
+      register: vm_output
+
+    - name: Wait for proper initialization before SSH
+      ansible.builtin.pause:
+        seconds: 15
+
+    - name: Show VM deployment info
+      debug:
+        var: vm_output
+
+    - name: Wait until we can SSH
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+        delay: 5
+
+    # --- Dynamic Variable Extraction ---
+    # Optional: Define the dynamic variables for clean reuse
+    - name: Set dynamic connection variables
+      set_fact:
+        vm_public_ip: "{{ vm_output.instances[0].attributes.PUBLIC_IP }}"
+        # Extract the port number (e.g., '11914:22' -> '11914')
+        vm_ssh_port: "{{ vm_output.instances[0].attributes.TCP_PORT_FORWARDING.split(':')[0] }}"
+
+    # --- Debugging (Optional but recommended) ---
+    - name: Debug dynamic connection info
+      debug:
+        msg: "Ansible VM deployed at {{ vm_public_ip }} on PORT {{ vm_ssh_port }}"
+      vars:
+        vm_public_ip: "{{ vm_output.instances[0].attributes.PUBLIC_IP }}"
+        vm_ssh_port: "{{ vm_output.instances[0].attributes.TCP_PORT_FORWARDING.split(':')[0] }}"
+
+
+    # --- Inventory and SSH Fix ---
+
+    - name: Add new VM to inventory (to memory) - CORRECTED for dynamic IP/Port
+      add_host:
+        name: "ansible_vm"
+        ansible_host: "{{ vm_output.instances[0].attributes.PUBLIC_IP }}"
+        ansible_port: "{{ vm_output.instances[0].attributes.TCP_PORT_FORWARDING.split(':')[0] }}"
+        ansible_user: "ansible"
+        ansible_ssh_private_key_file: "~/.ssh/id_rsa"
+
+    - name: Save VM to inventory file - CORRECTED for dynamic IP/Port
+      copy:
+        dest: "../inventory.ini"
+        content: |
+          [ansible]
+          {{ vm_output.instances[0].attributes.PUBLIC_IP }} ansible_user=ansible ansible_port={{ vm_output.instances[0].attributes.TCP_PORT_FORWARDING.split(':')[0] }} ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_become_pass={{ ansible_become_pass }}
