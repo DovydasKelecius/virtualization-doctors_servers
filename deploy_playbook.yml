@@ -1,0 +1,134 @@
+---
+- name: Deploy new Ansible VM on OpenNebula
+  hosts: localhost
+  become: true
+  gather_facts: false
+  vars_files:
+    - vars_files/vault_pass_ansible.yml
+    - vars_files/sudo_pass_ansible.yml
+
+  vars:
+    ansible_become_pass: "{{ ansible_sudo_pass }}"
+    ssh_key_path: "{{ lookup('env','HOME') }}/.ssh/id_rsa.pub"
+
+
+  tasks:
+    - name: Debug ansible_become_pass
+      debug:
+        msg:
+          - "ansible_become_pass is defined: {{ ansible_become_pass is defined }}"
+
+    - name: Read local SSH public key
+      ansible.builtin.slurp:
+        src: "{{ ssh_key_path }}"
+      register: ssh_key_data
+      become: false
+
+    - name: Debug ssh_key_data
+      debug:
+        msg:
+          - "SSH Key data length: {{ ssh_key_data.content | length }}"
+
+    - name: Debug ansible_become_pass
+      debug:
+        msg:
+          - "ansible_become_pass is defined: {{ ansible_become_pass is defined }}"
+
+    - name: Create ansible_vm
+      community.general.one_vm:
+        api_url: "https://grid5.mif.vu.lt/cloud3/RPC2"
+        api_username: "{{ ansible_vm_user }}"
+        api_password: "{{ ansible_vm_pass }}"
+        template_id: 2646
+        mode: 600
+        state: present
+        cpu: 0.2
+        vcpu: 1
+        memory: 1 GB
+        disk_size: 2 GB
+        attributes:
+          NAME: "rtfm_ansible"
+      become: false 
+      delegate_to: localhost
+      register: vm_output
+
+    - name: Show VM deployment info
+      debug:
+        var: vm_output
+
+    - name: Wait until we can SSH
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+        delay: 5
+      become: false
+
+    # - name: Ensure ansible user exists
+    #   ansible.builtin.user:
+    #     name: ansible
+    #     shell: /bin/bash
+    #     create_home: yes
+    #     groups: sudo
+    #     append: yes
+    #     password: "$6$tN.sP7KkP$nQ/7vP9uYyR0k4/yF5K9k3M5J.oM8R1k2L4i7L8j0R5K3"
+    #   become: true
+
+    - name: Add new VM to inventory (to memory)
+      add_host:
+        name: "ansible_vm"
+        ansible_host: "{{ vm_output.instances[0].networks[0].ip }}"
+        ansible_user: "ansible"
+        ansible_ssh_private_key_file: "~/.ssh/id_rsa"
+
+    # - name: Add SSH key for ansible user
+    #   ansible.builtin.authorized_key:
+    #     user: "{{ ansible_user_name }}"
+    #     state: present
+    #     key: "{{ lookup('file', ssh_key_path) }}"
+
+    # - name: Add user to sudoers
+    #   ansible.builtin.lineinfile:
+    #     path: /etc/sudoers
+    #     state: present
+    #     regexp: "^{{ ansible_user_name }}"
+    #     line: "{{ ansible_user_name }} ALL=(ALL) NOPASSWD:ALL"
+    #     validate: 'visudo -cf %s'
+
+    - name: Add new VM to inventory (memory)
+      add_host:
+        name: "ansible_vm"
+        ansible_host: "{{ vm_output.instances[0].networks[0].ip }}"
+        ansible_user: "ansible"
+        ansible_ssh_private_key_file: "~/.ssh/id_rsa"
+
+    # - name: Update package cache on new VM
+    #   hosts: ansible_vm
+    #   ansible.builtin.apt:
+    #     update_cache: yes
+    #     cache_valid_time: 3600
+
+
+    # - name: Install system dependencies
+    #   hosts: ansible_vm
+    #   ansible.builtin.apt:
+    #   name:
+    #     - software-properties-common
+    #     - curl
+    #     - wget
+    #     - git
+    #     - jq
+    #     - sshpass
+    #     - python3
+    #     - python3-pip
+    #     - python3-venv
+    #     - sudo
+    #   state: present
+
+    # - name: Install Ansible via apt
+    #   ansible.builtin.apt:
+    #     name: ansible
+    #     state: present
+
+    # - name: Install OpenNebula Python API
+    #   ansible.builtin.pip:
+    #     name: pyone
+    #     state: present
