@@ -1,4 +1,19 @@
-<?php session_start(); ?>
+<?php 
+session_start(); 
+
+// NEW CHECK: If already logged in as a DOCTOR, redirect to doctor home
+if (isset($_SESSION['doctor_id'])) {
+    header("Location: doctor/doctor_home.php");
+    exit;
+}
+
+// 1. If already logged in as a PATIENT, redirect to patient home
+if (isset($_SESSION['patient_id'])) {
+    header("Location: patient_home.php");
+    exit;
+}
+?>
+<!DOCTYPE html>
 <!DOCTYPE html>
 <html lang="lt">
 <head>
