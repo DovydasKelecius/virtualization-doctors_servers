@@ -18,6 +18,7 @@ $stmt->execute([$personal_code]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if ($user && $user['password'] === $pass) {
+    session_regenerate_id(true); 
     $_SESSION['patient_id'] = $user['id'];
     header("Location: patient_home.php");
     exit;

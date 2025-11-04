@@ -1,8 +1,15 @@
 <?php
 session_start();
-// If already logged in, redirect to doctor home
+
+// 1. If already logged in as a DOCTOR, redirect to doctor home
 if (isset($_SESSION['doctor_id'])) {
     header("Location: doctor_home.php");
+    exit;
+}
+
+// 2. NEW CHECK: If already logged in as a PATIENT, redirect to patient home
+if (isset($_SESSION['patient_id'])) {
+    header("Location: ../patient_home.php"); // Assuming doctor files are in a subdirectory
     exit;
 }
 ?>
