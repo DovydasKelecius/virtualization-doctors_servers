@@ -4,9 +4,10 @@ set -e
 # --- Configuration ---
 VENV_DIR=".venv"
 PLAYBOOK_FILE="deploy_playbook.yml"
-VAULT_ID_ARG1="ansible_id@./vault_password.sh"
-VAULT_ID_ARG2="ansible_pass@./vault_password.sh"
+VAULT_ID_ARG1="sudo_pass_ansible@./vault_password.sh"
+VAULT_ID_ARG2="vault_pass_ansible@./vault_password.sh"
 PYTHON_INTERPRETER_PATH="$(pwd)/$VENV_DIR/bin/python3"
+MITOGEN_PATH="$(pwd)/mitogen-0.3.30/ansible_mitogen/plugins/strategy"
 # ---------------------
 
 echo "--- 1. Setting up Python Virtual Environment ---"
@@ -20,9 +21,13 @@ fi
 # Activate the venv
 source "$VENV_DIR/bin/activate"
 
-# Ensure pyone is installed
-echo "Installing/ensuring 'pyone' dependency..."
-pip install pyone || { echo "Error: Failed to install pyone."; deactivate; exit 1; }
+# Check if pyone is installed
+if ! pip list | grep -q "pyone"; then
+    echo "Installing 'pyone' dependency..."
+    pip install pyone || { echo "Error: Failed to install pyone."; deactivate; exit 1; }
+else
+    echo "'pyone' is already installed."
+fi
 
 echo "--- 2. Checking for Ansible Inventory and Config ---"
 
@@ -32,6 +37,8 @@ if [ ! -f ".ansible.cfg" ]; then
     echo "[defaults]" > ansible.cfg
     echo "interpreter_python = $PYTHON_INTERPRETER_PATH" >> ansible.cfg
     echo "host_key_checking = False" >> ansible.cfg
+    echo "strategy_plugins = $MITOGEN_PATH" >> ansible.cfg
+    echo "strategy = mitogen_linear" >> ansible.cfg
 fi
 
 echo "--- 3. Running Ansible Playbook ---"

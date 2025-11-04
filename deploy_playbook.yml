@@ -13,11 +13,6 @@
 
 
   tasks:
-    - name: Debug ansible_become_pass
-      debug:
-        msg:
-          - "ansible_become_pass is defined: {{ ansible_become_pass is defined }}"
-
     - name: Read local SSH public key
       ansible.builtin.slurp:
         src: "{{ ssh_key_path }}"
@@ -38,7 +33,7 @@
       community.general.one_vm:
         api_url: "https://grid5.mif.vu.lt/cloud3/RPC2"
         api_username: "{{ ansible_vm_user }}"
-        api_password: "{{ ansible_vm_pass }}"
+        api_password: "{{ ansible_vm_password }}"
         template_id: 2646
         mode: 600
         state: present
