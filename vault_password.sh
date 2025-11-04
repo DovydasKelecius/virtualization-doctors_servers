@@ -1,2 +1,2 @@
 #!/bin/bash
-echo "vaulting"
+echo "my_secret_password"
