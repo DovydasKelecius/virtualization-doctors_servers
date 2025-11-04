@@ -32,7 +32,7 @@
 
     - name: Wait for proper initialization before SSH
       ansible.builtin.pause:
-        seconds: 15
+        seconds: 20
 
     - name: Show VM deployment info
       debug:
