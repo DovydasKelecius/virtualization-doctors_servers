@@ -113,7 +113,7 @@
     <?php endif; ?>
     
     <label for="personal_code">Asmens kodas:</label>
-    <input type="text" id="personal_code" name="personal_code" required>
+    <input type="text" id="personal_code" name="personal_code"  maxlength="11" required>
     
     <label for="password">Slaptažodis:</label>
     <input type="password" id="password" name="password" required>

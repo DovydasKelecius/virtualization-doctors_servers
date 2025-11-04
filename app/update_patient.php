@@ -38,19 +38,19 @@ try {
     // --- 3. Robust Validation ---
 
     // Name and Surname Validation (Supports Lithuanian/Unicode letters, spaces, hyphens, and apostrophes)
-    $name_regex = "/^[\p{L}\s'-]{2,50}$/u";
+    $name_regex = "/^[\p{L}\s'-]{2,30}$/u";
     
     if (empty($first_name) || !preg_match($name_regex, $first_name)) {
-        throw new Exception("Vardas turi būti nuo 2 iki 50 raidžių ir negali turėti skaičių ar specialių simbolių (išskyrus brūkšnelį/apostrofą).");
+        throw new Exception("Vardas turi būti nuo 2 iki 30 raidžių ir negali turėti skaičių ar specialių simbolių (išskyrus brūkšnelį/apostrofą).");
     }
     if (empty($last_name) || !preg_match($name_regex, $last_name)) {
-        throw new Exception("Pavardė turi būti nuo 2 iki 50 raidžių ir negali turėti skaičių ar specialių simbolių.");
+        throw new Exception("Pavardė turi būti nuo 2 iki 30 raidžių ir negali turėti skaičių ar specialių simbolių.");
     }
 
     // Email Validation and Sanitization (FIXED: Added stricter domain check)
     $sanitized_email = filter_var($email, FILTER_SANITIZE_EMAIL);
 
-    if (!filter_var($sanitized_email, FILTER_VALIDATE_EMAIL) || strlen($sanitized_email) > 100) {
+    if (!filter_var($sanitized_email, FILTER_VALIDATE_EMAIL) || strlen($sanitized_email) > 40) {
         throw new Exception("Neteisingas el. pašto formatas.");
     }
     
@@ -77,7 +77,8 @@ try {
      * FIX: The previous regex allowed phone numbers to end with a separator, e.g., '+32323232-'.
      * New stricter format: Must start with optional '+', can contain spaces/separators, but must END with a digit (\d$).
      */
-    $phone_format_regex = "/^\+?[\d\s\-\(\)]{0,20}\d$/"; 
+    $phone_format_regex = "/^\+?[\d\s\-\(\)]{0,20}\d$/";
+    //$phone_format_regex = "/^(\+370\d{8}|\d{9})$/"; 
 
     if (!preg_match($phone_format_regex, $phone)) {
         throw new Exception("Neteisingas telefono numerio formatas. Leistini simboliai: skaitmenys, tarpai, -, ( ), ir + pradžioje. Numeris negali baigtis simboliu.");

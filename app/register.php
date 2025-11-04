@@ -219,7 +219,7 @@
 
     const nameRegex = /^[A-Za-zĄČĘĖĮŠŲŪŽąčęėįšųūž]+$/u; // Lithuanian letters only
     const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-    const phoneRegex = /^(\+370\d{8}|\d{9})$/;
+    const phoneRegex = /^\+?[\d\s\-\(\)]{0,20}\d$/;
 
     switch (id) {
       case 'first_name':
