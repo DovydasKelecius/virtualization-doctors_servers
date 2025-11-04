@@ -59,8 +59,8 @@ try {
      * This additional check forces the email to have a conventional TLD (2 to 10 letters).
      * This blocks the malformed input 'to2mas@gmail.com2aaaaaaaaaaaaaaa'.
      */
-    if (!preg_match('/@[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,10}$/', $sanitized_email)) {
-        throw new Exception("El. pašto adresas turi turėti galiojantį domeną (pvz., '.com', '.lt').");
+    if (!preg_match('/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/', $sanitized_email)) {
+        throw new Exception("Neteisingas el. pašto formatas");
     }
 
     // Use the sanitized email for database operations
