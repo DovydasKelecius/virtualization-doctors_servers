@@ -11,8 +11,8 @@ services:
       - DB_HOST=193.219.91.104
       - DB_PORT=3545
       - DB_NAME=hospital
-      - DB_USER=hospital_owner
-      - DB_PASSWORD=iLoveUnix
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
     restart: always
 
   web:
