@@ -11,8 +11,10 @@ services:
       - DB_HOST=193.219.91.104
       - DB_PORT=3545
       - DB_NAME=hospital
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
+
+    secrets:
+      - db_user
+      - db_passwd
     restart: always
 
   web:
@@ -28,3 +30,9 @@ services:
       - ./app:/var/www/html
       - ./static-files:/var/www/html/static
     restart: always
+
+secrets:
+  db_user:
+    external: true
+  db_passwd:
+    external: true
