@@ -3,13 +3,6 @@ session_start();
 
 require "db.php"; 
 
-try {
-    $pdo = new PDO("pgsql:host=$host;port=$port;dbname=$dbname", $user, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("❌ Connection failed: " . $e->getMessage());
-}
-
 $first_name = $_POST['first_name'] ?? '';
 $last_name = $_POST['last_name'] ?? '';
 $email = $_POST['email'] ?? '';
@@ -18,6 +11,9 @@ $password = $_POST['password'] ?? '';
 $password_repeat = $_POST['password_repeat'] ?? '';
 $phone = $_POST['phone'] ?? '';
 $gender = $_POST['gender'] ?? '';
+
+// Hash the password
+$hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
 if ($password !== $password_repeat) {
     $_SESSION['error'] = "❌ Slaptažodžiai nesutampa!";
@@ -47,7 +43,7 @@ if ($check->fetchColumn() > 0) {
 
 $stmt = $pdo->prepare("INSERT INTO patients (first_name, last_name, email, personal_code, password, phone, gender)
                        VALUES (?, ?, ?, ?, ?, ?, ?)");
-$stmt->execute([$first_name, $last_name, $email, $personal_code, $password, $phone, $gender]);
+$stmt->execute([$first_name, $last_name, $email, $personal_code, $hashed_password, $phone, $gender]);
 
 header("Location: index.php");
 exit;
