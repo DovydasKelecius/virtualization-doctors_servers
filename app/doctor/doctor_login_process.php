@@ -14,11 +14,11 @@ if (empty($docloginid) || empty($password)) {
 
 try {
     // Check credentials against doctors table
-    $stmt = $pdo->prepare("SELECT id, first_name, last_name FROM doctors WHERE docloginid = ? AND password = ?");
-    $stmt->execute([$docloginid, $password]);
+    $stmt = $pdo->prepare("SELECT id, first_name, last_name, password FROM doctors WHERE docloginid = ?");
+    $stmt->execute([$docloginid]);
     $doctor = $stmt->fetch();
 
-    if ($doctor) {
+    if ($doctor && password_verify($password, $doctor['password'])) {
         // Login successful
         $_SESSION['doctor_id'] = $doctor['id'];
         $_SESSION['doctor_name'] = $doctor['first_name'] . ' ' . $doctor['last_name'];
