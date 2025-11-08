@@ -20,8 +20,8 @@ $patient = $stmt->fetch(PDO::FETCH_ASSOC);
 // Fetch the appointment ID (a.id) for cancellation purposes
 $appointments = $pdo->prepare(
     "SELECT
-        a.id, /* <<< ADDED APPOINTMENT ID */
-        a.specialization,
+        a.id,
+        d.specialization,
         a.appointment_date,
         a.comment,
         d.first_name AS doctor_first_name,
@@ -33,7 +33,7 @@ $appointments = $pdo->prepare(
     WHERE
         a.patient_id = ?
     ORDER BY
-        a.appointment_date ASC", // Changed to ASC to show upcoming first
+        a.appointment_date ASC",
 );
 $appointments->execute([$patient_id]);
 $list = $appointments->fetchAll(PDO::FETCH_ASSOC);

@@ -71,13 +71,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     // Insert appointment
     $stmt = $pdo->prepare("
-        INSERT INTO appointments (patient_id, doctor_id, specialization, appointment_date, comment)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO appointments (patient_id, doctor_id, appointment_date, comment)
+        VALUES (?, ?, ?, ?)
     ");
     $stmt->execute([
         $patient_id,
         $doctor_id,
-        $specialization,
         $datetime,
         $comment,
     ]);

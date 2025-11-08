@@ -25,19 +25,21 @@ $patient = $pstmt->fetch(PDO::FETCH_ASSOC);
 
 // Get appointment details
 $astmt = $pdo->prepare("
-    SELECT appointment_date, comment, specialization
-    FROM appointments
-    WHERE id = ?
+    SELECT a.appointment_date, a.comment, d.specialization
+    FROM appointments a
+    JOIN doctors d ON a.doctor_id = d.id
+    WHERE a.id = ?
 ");
 $astmt->execute([$appointment_id]);
 $appointment = $astmt->fetch(PDO::FETCH_ASSOC);
 
 // Get appointment-based visit history
 $hstmt = $pdo->prepare("
-    SELECT appointment_date, specialization, comment
-    FROM appointments
-    WHERE patient_id = ?
-    ORDER BY appointment_date DESC
+    SELECT a.appointment_date, d.specialization, a.comment
+    FROM appointments a
+    JOIN doctors d ON a.doctor_id = d.id
+    WHERE a.patient_id = ?
+    ORDER BY a.appointment_date DESC
 ");
 $hstmt->execute([$patient_id]);
 $history = $hstmt->fetchAll(PDO::FETCH_ASSOC);
