@@ -53,21 +53,7 @@ while ($start < $end) {
 <head>
 <meta charset="UTF-8">
 <title>Gydytojo informacija</title>
-<style>
-  body { font-family: Arial; background-color: #f8f9fa; text-align: center; margin-top: 40px; }
-  .top { font-size: 28px; font-weight: bold; cursor: pointer; margin-bottom: 20px; }
-  .doctor-info { background: #fff; display: inline-block; padding: 25px; border-radius: 12px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 35px; }
-  .calendar { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; max-width: 800px; margin: 0 auto; }
-  .day { width: 130px; padding: 12px; border-radius: 10px; font-weight: bold; }
-  .available { background-color: #28a745; color: white; cursor: pointer; transition: 0.2s; }
-  .available:hover { background-color: #218838; }
-  .unavailable { background-color: #6c757d; color: white; }
-  a { text-decoration: none; color: inherit; }
-  .back-btn { display: inline-block; margin-top: 25px; background: #6c757d; color: white;
-    padding: 10px 25px; border-radius: 6px; text-decoration: none; font-weight: bold; }
-  .back-btn:hover { background-color: #5a6268; }
-</style>
+<link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
 
@@ -88,28 +74,30 @@ while ($start < $end) {
         $booked_count = $booked_days[$dateStr] ?? 0;
 
         if ($dayOfWeek >= 6) {
-            // Šeštadienis ar sekmadienis
             $class = 'unavailable';
             $label = 'Nedirbama';
+            $is_available = false;
         } elseif ($booked_count >= $total_slots) {
-            // Visi laikai užimti
             $class = 'unavailable';
             $label = 'Užimta';
+            $is_available = false;
         } else {
-            // Laisva diena
             $class = 'available';
             $label = 'Pasirinkti';
+            $is_available = true;
         }
       ?>
-      <div class="day <?= $class ?>">
-        <?php if ($class === 'available'): ?>
-          <a href="select_time.php?doctor_id=<?= $doctor_id ?>&date=<?= $dateStr ?>">
+      <?php if ($is_available): ?>
+        <a href="select_time.php?doctor_id=<?= $doctor_id ?>&date=<?= $dateStr ?>">
+          <div class="day <?= $class ?>">
             <?= $dateStr ?><br><small><?= $label ?></small>
-          </a>
-        <?php else: ?>
+          </div>
+        </a>
+      <?php else: ?>
+        <div class="day <?= $class ?>">
           <?= $dateStr ?><br><small><?= $label ?></small>
-        <?php endif; ?>
-      </div>
+        </div>
+      <?php endif; ?>
     <?php endforeach; ?>
   </div>
 

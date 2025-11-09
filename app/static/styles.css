@@ -1,0 +1,358 @@
+/* === Global Styles === */
+:root {
+    --primary-color: #007bff;
+    --primary-hover: #0056b3;
+    --secondary-color: #6c757d;
+    --secondary-hover: #5a6268;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --light-bg: #f8f9fa;
+    --white-bg: #ffffff;
+    --text-color: #343a40;
+    --border-color: #dee2e6;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --border-radius: 8px;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--white-bg);
+    color: var(--text-color);
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+}
+
+h1, h2, h3 {
+    color: var(--text-color);
+    cursor: pointer;
+}
+
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.top-right-search {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    max-width: 350px; /* Slightly wider for the search input */
+}
+
+/* === Layout & Containers === */
+.container, .card, .form-container, .table-container, .box, .content-container {
+    border: 1px solid var(--border-color);
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    margin: 20px auto;
+    text-align: left;
+    max-width: 90%;
+}
+
+.container { max-width: 400px; }
+.content-container { max-width: 700px; }
+.table-container { max-width: 800px; }
+
+/* === Forms & Input Alignment === */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group, .input-item {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    gap: 8px;
+}
+
+label {
+    font-weight: bold;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="date"],
+select,
+textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.input-group {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.input-group .input-item {
+    flex: 1;
+    min-width: calc(50% - 10px);
+}
+
+.search-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.search-input-group input[type="text"] {
+    flex-grow: 1;
+}
+
+/* === Simplified Buttons === */
+.btn, button, button[type="submit"], .back, .back-btn, .back-link, a.specialization {
+    display: block; /* Stack vertically */
+    max-width: 400px; /* Prevent buttons from being too wide */
+    margin: 15px auto; /* Center horizontally and add vertical space */
+    padding: 12px 30px;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    background-color: var(--primary-color);
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    box-sizing: border-box;
+    transition: background-color 0.2s;
+}
+
+.btn:hover, button:hover, button[type="submit"]:hover, .back:hover, .back-btn:hover, .back-link:hover, a.specialization:hover {
+    background-color: var(--primary-hover);
+    color: white;
+    text-decoration: none;
+}
+
+/* Override for buttons inside search group */
+.search-input-group .btn, .search-input-group button {
+    width: auto; /* Override block-level width */
+    margin: 0; /* Override auto margins */
+    display: inline-block; /* Ensure it's not block */
+    max-width: none; /* Remove max-width constraint */
+}
+
+.btn-secondary, .back, .back-btn, .back-link {
+    background-color: var(--secondary-color);
+}
+.btn-secondary:hover, .back:hover, .back-btn:hover, .back-link:hover {
+    background-color: var(--secondary-hover);
+}
+
+.btn-danger, .btn-cancel {
+    background-color: var(--danger-color);
+}
+.btn-danger:hover, .btn-cancel:hover {
+    background-color: #c82333;
+}
+
+.btn-success, .green-btn {
+    background-color: var(--success-color);
+}
+.btn-success:hover, .green-btn:hover {
+    background-color: #218838;
+}
+
+/* New style for link-like danger button */
+.btn-link-danger {
+    background: none;
+    border: none;
+    color: var(--danger-color);
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    font-weight: bold;
+}
+.btn-link-danger:hover {
+    color: #c82333;
+}
+
+
+/* === Time Slot Grid === */
+.time-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.time-grid .time-option {
+    /* container for radio and label */
+}
+
+.time-grid input[type="radio"] {
+    display: none; /* Hide the actual radio button */
+}
+
+.time-grid .time-btn {
+    display: block;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.time-grid input[type="radio"]:checked + .time-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* === Calendar Day Buttons === */
+.calendar {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    margin: 20px auto;
+    max-width: 800px; /* Match table-container width */
+}
+
+.calendar a {
+    text-decoration: none;
+}
+
+.day {
+    padding: 15px;
+    border-radius: var(--border-radius);
+    text-align: center;
+    font-weight: bold;
+    transition: background-color 0.2s, transform 0.2s;
+    color: white;
+}
+
+.day small {
+    font-weight: normal;
+    font-size: 0.9em;
+}
+
+.day.available {
+    background-color: var(--primary-color);
+    cursor: pointer;
+}
+
+.day.available:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+.day.unavailable {
+    background-color: var(--secondary-color);
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+
+/* === Tables === */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+th, td {
+    border: 1px solid var(--border-color);
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: var(--light-bg);
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: var(--light-bg);
+}
+
+/* === Alerts & Modals === */
+.error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.alert-fixed {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px 30px;
+    border-radius: 8px;
+    z-index: 1000;
+    box-shadow: var(--shadow);
+    font-weight: bold;
+}
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+}
+.alert-error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal.show-modal {
+    display: block;
+}
+
+.modal-content {
+    background-color: var(--white-bg);
+    margin: 10% auto;
+    padding: 30px;
+    border-radius: var(--border-radius);
+    width: 90%;
+    max-width: 800px;
+    position: relative;
+}
+
+.close-button {
+    color: #aaa;
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}

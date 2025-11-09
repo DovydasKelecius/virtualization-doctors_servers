@@ -33,17 +33,7 @@ $patient = $pstmt->fetch(PDO::FETCH_ASSOC);
 <head>
 <meta charset="UTF-8">
 <title>Gydytojai – <?= htmlspecialchars($specialization) ?></title>
-<style>
-  body { font-family: Arial; background: #f9f9f9; text-align: center; padding-top: 40px; }
-  table { margin: 20px auto; border-collapse: collapse; background: white; width: 60%; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-  th, td { border: 1px solid #ccc; padding: 10px; }
-  th { background-color: #007bff; color: white; }
-  tr:nth-child(even) { background: #f2f2f2; }
-  .btn { background: #28a745; color: white; border: none; border-radius: 5px; padding: 8px 15px; cursor: pointer; text-decoration: none; display: inline-block; }
-  .btn:hover { background: #218838; }
-  .back { display: inline-block; margin-top: 20px; background: #6c757d; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; }
-  .top { font-size: 24px; font-weight: bold; margin-bottom: 20px; cursor: pointer; }
-</style>
+<link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
   <div class="top" onclick="window.location.href='patient_home.php'">HOSPITAL</div>

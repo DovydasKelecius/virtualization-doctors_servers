@@ -14,15 +14,7 @@ unset($_SESSION['appointment_success']);
 <head>
 <meta charset="UTF-8">
 <title>Registracija sėkminga</title>
-<style>
-  body { font-family: Arial; background: #f8f9fa; text-align: center; margin-top: 80px; }
-  .box { background: white; display: inline-block; padding: 30px; border-radius: 10px;
-         box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-  h2 { color: #28a745; }
-  .btn { margin-top: 20px; background: #007bff; color: white; padding: 10px 20px;
-         border-radius: 6px; text-decoration: none; display: inline-block; }
-  .btn:hover { background: #0056b3; }
-</style>
+<link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
 

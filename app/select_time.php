@@ -97,62 +97,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
 <meta charset="UTF-8">
 <title>Pasirinkite laiką</title>
-<style>
-    body { font-family: Arial; background-color: #f8f9fa; text-align: center; margin-top: 40px; }
-    .top { font-size: 24px; font-weight: bold; cursor: pointer; margin-bottom: 20px; }
-
-    /* Standardized centered blocks */
-    .doctor-info, form {
-        background: #fff;
-        display: inline-block;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        margin-bottom: 30px;
-        /* Enforce consistent width and centering */
-        max-width: 300px;
-        width: 90%;
-        box-sizing: border-box;
-    }
-
-    /* Input and button consistency */
-    select, textarea, button[type="submit"] {
-        display: block;
-        width: 100%; /* Fill the 300px width of the form */
-        padding: 10px;
-        margin-top: 10px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        box-sizing: border-box;
-    }
-
-    textarea { height: 100px; resize: none; }
-
-    /* Confirmation button style */
-    button[type="submit"] {
-        background-color: #28a745;
-        color: white;
-        cursor: pointer;
-        margin-top: 15px;
-        border: none; /* Override border for submit button */
-    }
-    button[type="submit"]:hover { background-color: #218838; }
-
-    /* Centered Back Button (Moved outside form) */
-    .back {
-        display: block;
-        width: 300px; /* Match max-width of form/info */
-        margin: 15px auto 0 auto; /* Center it horizontally */
-
-        background: #6c757d;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 5px;
-        text-decoration: none;
-        box-sizing: border-box;
-    }
-    .back:hover { background: #5a6268; }
-</style>
+<link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
 
@@ -178,13 +123,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <h3>Pasirinkite laiką</h3>
 
 <form method="POST">
-    <label for="time">Laikas:</label>
-    <select name="time" id="time" required>
-        <option value="">-- Pasirinkite laiką --</option>
+    <div class="time-grid">
         <?php foreach ($time_slots as $t): ?>
-            <option value="<?= $t ?>"><?= $t ?></option>
+            <div class="time-option">
+                <input type="radio" id="time_<?= $t ?>" name="time" value="<?= $t ?>" required>
+                <label for="time_<?= $t ?>" class="time-btn"><?= $t ?></label>
+            </div>
         <?php endforeach; ?>
-    </select>
+    </div>
 
     <label for="comment">Komentarai (pasirinktinai):</label>
     <textarea name="comment" id="comment" placeholder="Trumpai aprašykite savo problemą..."></textarea>

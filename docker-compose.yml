@@ -6,7 +6,6 @@ services:
     container_name: hospital_php
     volumes:
       - ./app:/var/www/html
-      - ./static-files:/var/www/html/static
     environment:
       - DB_HOST=193.219.91.104
       - DB_PORT=3545
@@ -26,5 +25,4 @@ services:
       - app
     volumes:
       - ./app:/var/www/html
-      - ./static-files:/var/www/html/static
     restart: always

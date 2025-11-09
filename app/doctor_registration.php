@@ -26,39 +26,7 @@ $specializations = $specStmt->fetchAll(PDO::FETCH_COLUMN);
 <head>
     <meta charset="UTF-8">
     <title>Registracija pas daktarą</title>
-    <style>
-        body { font-family: Arial; text-align: center; background-color: #f5f5f5; margin-top: 40px; }
-        .container { display: inline-block; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        a.specialization {
-            display: block;
-            width: 300px;
-            padding: 10px;
-            margin: 8px auto;
-            background-color: #28a745;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background-color 0.2s;
-        }
-        a.specialization:hover { background-color: #218838; }
-        /* Search button styling to match doctor buttons */
-        .search-btn {
-            margin-left:8px; padding:8px 12px; border-radius:4px; border:none; background:#28a745; color:#fff; cursor:pointer;
-        }
-        .search-btn:hover { background:#218838; }
-        .top { font-size: 24px; font-weight: bold; margin-bottom: 20px; cursor:pointer; }
-        .back {
-            /* Keep the display: inline-block; for centering via text-align: center */
-            display: inline-block;
-            /* Adjust margin-top for spacing inside the container */
-            margin-top: 15px;
-            background: #6c757d;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <div class="top" onclick="window.location.href='patient_home.php'">HOSPITAL</div>
@@ -67,11 +35,10 @@ $specializations = $specStmt->fetchAll(PDO::FETCH_COLUMN);
         $patient["first_name"],
     ) ?> <?= htmlspecialchars($patient["last_name"]) ?></h2>
 
-    <!-- Search box (top-right) -->
-    <div style="position: absolute; top: 12px; right: 12px;">
-        <form action="doctor_list.php" method="GET" style="display:flex; align-items:center;">
-            <input type="text" name="q" placeholder="Ieškoti gydytojo arba specializacijos" style="padding:8px 10px; width:260px; border:1px solid #ccc; border-radius:4px;" />
-            <button type="submit" class="search-btn">Ieškoti</button>
+    <div class="top-right-search">
+        <form action="doctor_list.php" method="GET" class="search-input-group">
+            <input type="text" name="q" placeholder="Ieškoti gydytojo arba specializacijos" />
+            <button type="submit" class="btn">Ieškoti</button>
         </form>
     </div>
 
