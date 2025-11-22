@@ -1,0 +1,167 @@
+- name: Atnaujinti APT kešą ir įdiegti Docker priklausomybes
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - python3-pip
+    state: present
+    update_cache: yes
+  tags: [docker]
+
+- name: Patikrinti, ar įdiegta community.docker kolekcija
+  ansible.builtin.command: ansible-galaxy collection list community.docker
+  register: docker_collection_check
+  ignore_errors: true
+  changed_when: false
+  delegate_to: localhost
+  run_once: true
+  tags: [docker]
+
+- name: Įdiegti community.docker kolekciją, jei jos nėra
+  ansible.builtin.command: ansible-galaxy collection install community.docker
+  when: docker_collection_check.rc != 0
+  delegate_to: localhost
+  run_once: true
+  tags: [docker]
+
+- name: Sukurti katalogą GPG raktams
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  tags: [docker]
+
+- name: Atsisiųsti Docker GPG raktą
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/debian/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+  tags: [docker]
+
+- name: Konvertuoti GPG raktą į binary formatą
+  ansible.builtin.command:
+    cmd: gpg --dearmor -o /etc/apt/keyrings/docker.gpg /etc/apt/keyrings/docker.asc
+    creates: /etc/apt/keyrings/docker.gpg
+  tags: [docker]
+
+- name: Ištrinti ASCII formato GPG raktą
+  ansible.builtin.file:
+    path: /etc/apt/keyrings/docker.asc
+    state: absent
+  tags: [docker]
+
+- name: Pridėti Docker repozitoriją su GPG rakto nuoroda
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian {{ ansible_lsb.codename }} stable"
+    state: present
+    filename: docker
+  tags: [docker]
+
+- name: Įdiegti Docker Engine ir Python Docker SDK
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: present
+  tags: [docker]
+
+- name: Įdiegti Docker SDK for Python (per APT)
+  ansible.builtin.apt:
+    name: python3-docker
+    state: present
+  tags: [docker]
+
+- name: Užtikrinti, kad Docker tarnyba veikia
+  service:
+    name: docker
+    state: started
+    enabled: yes
+  tags: [docker]
+
+- name: Sustabdyti ir pašalinti seną konteinerį
+  community.docker.docker_container:
+    name: hospital_db_container
+    state: absent
+  tags: [db]
+
+- name: Pašalinti seną Docker volume
+  community.docker.docker_volume:
+    name: postgres_hospital_data
+    state: absent
+  tags: [db]
+
+- name: Sukurti laikiną katalogą SQL skriptui
+  file:
+    path: /tmp/postgres_init
+    state: directory
+    mode: '0755'
+  tags: [db]
+
+- name: Kopijuoti SQL failą į laikiną katalogą
+  copy:
+    src: hospital_20251108_185700.sql
+    dest: /tmp/postgres_init/init.sql
+  tags: [db]
+
+
+
+- name: Nustatyti duomenų bazės kintamuosius
+  set_fact:
+    postgres_db: hospital
+    postgres_user: hospital_owner
+    postgres_password: "iLoveUnix"
+  tags: [db]
+
+- name: Paleisti PostgreSQL konteinerį
+  community.docker.docker_container:
+    name: hospital_db_container
+    image: postgres:16
+    state: started
+    restart_policy: always
+    env:
+      POSTGRES_DB: "{{ postgres_db }}"
+      POSTGRES_USER: "{{ postgres_user }}"
+      POSTGRES_PASSWORD: "{{ postgres_password }}"
+    ports:
+      - "5432:5432"
+    volumes:
+      - "postgres_hospital_data:/var/lib/postgresql/data"
+  tags: [db]
+
+- name: Palaukti, kol PostgreSQL priims prisijungimus
+  wait_for:
+    port: 5432
+    delay: 10
+    timeout: 60
+    host: 127.0.0.1
+  become: no
+  tags: [db]
+
+- name: Kopijuoti išvalytą SQL failą į konteinerį
+  ansible.builtin.command: "docker cp /tmp/postgres_init/init.sql hospital_db_container:/tmp/init.sql"
+  changed_when: true
+  tags: [db]
+
+- name: Importuoti duomenų bazės duomenis su psql
+  community.docker.docker_container_exec:
+    container: hospital_db_container
+    command: psql -v ON_ERROR_STOP=1 -U {{ postgres_user }} -d {{ postgres_db }} -f /tmp/init.sql
+  register: psql_import_result
+  changed_when: "'COPY' in psql_import_result.stdout"
+  tags: [db]
+
+- name: Parodyti importavimo rezultatą (debug)
+  debug:
+    var: psql_import_result.stdout_lines
+  when: psql_import_result.stdout_lines | length > 0
+  tags: [db]
+
+- name: Išvalyti laikiną SQL skripto katalogą
+  file:
+    path: /tmp/postgres_init
+    state: absent
+  tags: [db]
