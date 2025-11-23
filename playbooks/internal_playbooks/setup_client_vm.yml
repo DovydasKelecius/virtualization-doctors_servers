@@ -1,0 +1,255 @@
+---
+- name: "Chromium-in-Docker (X11) setup"
+  hosts: client
+  become: yes
+  vars_files:
+    - ../vars_files/sudo_pass.yml
+  vars:
+    web_user: "client"
+    ansible_become_pass: "{{ client_become_pass }}"
+    target_user: "{{ web_user | default('juka1028') }}"
+    display_default: ":10.0"     # xrdp default; change if needed
+    image_name: "my/chromium-x11"
+    build_dir: "/opt/chromium-x11"
+    profile_dir: "/home/{{ target_user }}/.local/share/chromium-docker"
+
+  collections:
+    - community.docker
+
+  tasks:
+    ########################################################################
+    # 0) Base deps (host-side xauth & xdpyinfo used by the launcher)
+    ########################################################################
+    - name: "Install base dependencies"
+      ansible.builtin.apt:
+        pkg:
+          - ca-certificates
+          - curl
+          - gnupg
+          - python3-apt
+          - xauth
+          - x11-xserver-utils   # provides xdpyinfo
+        state: latest
+        update_cache: yes
+
+    ########################################################################
+    # 1) Docker repo & install
+    ########################################################################
+    - name: "Check if docker key exists"
+      ansible.builtin.stat:
+        path: /etc/apt/keyrings/docker.gpg
+      register: docker_gpg
+
+    - name: "Create APT keyring directory"
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: "Download Docker armored signature"
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/debian/gpg
+        dest: /tmp/docker.asc
+      when: not docker_gpg.stat.exists
+
+    - name: "Dearmor Docker asc"
+      ansible.builtin.command: gpg --dearmor -o /etc/apt/keyrings/docker.gpg /tmp/docker.asc
+      when: not docker_gpg.stat.exists
+
+    - name: "Clean up temporary GPG file"
+      ansible.builtin.file:
+        path: /tmp/docker.asc
+        state: absent
+
+    - name: "Add Docker apt repository"
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+        state: present
+        update_cache: yes
+        filename: docker
+
+    - name: "Install Docker"
+      ansible.builtin.apt:
+        pkg:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: latest
+        update_cache: yes
+
+    - name: "Add {{ target_user }} to docker group"
+      ansible.builtin.user:
+        name: "{{ target_user }}"
+        groups: docker
+        append: yes
+
+    - name: "Ensure Docker is running"
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: yes
+
+    ########################################################################
+    # 2) Build Chromium image (same stack you used)
+    ########################################################################
+    - name: "Create build dir"
+      ansible.builtin.file:
+        path: "{{ build_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: "Write Dockerfile"
+      ansible.builtin.copy:
+        dest: "{{ build_dir }}/Dockerfile"
+        mode: "0644"
+        content: |
+          FROM debian:bookworm
+          ENV DEBIAN_FRONTEND=noninteractive
+          RUN apt-get update && \
+              apt-get install -y --no-install-recommends \
+                chromium x11-utils dbus-x11 ca-certificates fonts-dejavu-core \
+              && rm -rf /var/lib/apt/lists/*
+
+    - name: "Build image {{ image_name }}"
+      community.docker.docker_image:
+        name: "{{ image_name }}"
+        source: build
+        build:
+          path: "{{ build_dir }}"
+        force_source: false
+        force_tag: true
+        state: present
+
+    ########################################################################
+    # 3) Per-user launcher + systemd user service
+    ########################################################################
+    - name: "Create user dirs"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+      loop:
+        - "/home/{{ target_user }}/bin"
+        - "/home/{{ target_user }}/.config/systemd/user"
+        - "{{ profile_dir }}"
+
+    - name: "Install chromium-docker-autostart.sh"
+      ansible.builtin.copy:
+        dest: "/home/{{ target_user }}/bin/chromium-docker-autostart.sh"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0755"
+        content: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          LOG="$HOME/chromium-docker.log"
+          {
+            echo "[$(date)] starting…"
+
+            # Use current RDP/X display (xrdp is usually :10.0)
+            export DISPLAY="${DISPLAY:-{{ display_default }}}"
+            echo "DISPLAY=$DISPLAY"
+
+            # Build a FamilyWild xauth for this DISPLAY
+            DOCKER_XAUTH="/tmp/docker.${USER}.$(echo "$DISPLAY" | tr -c '0-9' _).xauth"
+            rm -f "$DOCKER_XAUTH"; touch "$DOCKER_XAUTH"
+            DISPNUM=$(echo "$DISPLAY" | sed -n 's/.*:\([0-9]\+\).*/\1/p')
+            for pat in "$DISPLAY" ":$DISPNUM" "unix:$DISPNUM" "$(hostname)/unix:$DISPNUM"; do
+              xauth nlist "$pat" 2>/dev/null | sed 's/^..../ffff/' | xauth -f "$DOCKER_XAUTH" nmerge - && break || true
+            done
+            chmod 644 "$DOCKER_XAUTH"
+            echo "XAUTH -> $(xauth -f "$DOCKER_XAUTH" list | head -n1 || echo 'empty')"
+
+            # Wait for X to be ready (max 10s)
+            for i in {1..20}; do
+              if xdpyinfo >/dev/null 2>&1; then echo "X ready."; break; fi
+              sleep 0.5
+            done
+
+            # Persistent profile + clear old locks
+            PROFILE="$HOME/.local/share/chromium-docker"
+            rm -f "$PROFILE"/Singleton* "$PROFILE"/DevToolsActivePort "$PROFILE"/"First Run" 2>/dev/null || true
+
+            # One container per display
+            CNAME="chromium-x11-$(echo "$DISPLAY" | tr -c '0-9' _)"
+            docker rm -f "$CNAME" >/dev/null 2>&1 || true
+            echo "Launching container $CNAME…"
+
+            exec docker run -d \
+              --name "$CNAME" \
+              -e DISPLAY="$DISPLAY" \
+              -e XAUTHORITY=/root/.Xauthority \
+              -e DBUS_SESSION_BUS_ADDRESS= \
+              -e NO_AT_BRIDGE=1 \
+              -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
+              -v "$DOCKER_XAUTH:/root/.Xauthority:ro" \
+              -v "$PROFILE:/data" \
+              --shm-size=2g --ipc=host \
+              {{ image_name }} chromium \
+                --user-data-dir=/data \
+                --no-sandbox --disable-setuid-sandbox \
+                --disable-gpu --use-gl=swiftshader --in-process-gpu \
+                --no-first-run --no-default-browser-check \
+                --password-store=basic \
+                --ozone-platform=x11 \
+                --disable-extensions \
+                --disable-background-networking \
+                --no-service-autorun \
+                --window-size=1280,800 \
+                --test-type \
+                about:blank
+          } >>"$LOG" 2>&1
+
+    - name: "Allow user lingering (lets user services survive logouts)"
+      ansible.builtin.command: "loginctl enable-linger {{ target_user }}"
+      register: linger_result
+      changed_when: "'Created symlink' in linger_result.stdout or 'already enabled' in linger_result.stderr"
+      failed_when: false
+
+    - name: "Install systemd user service"
+      ansible.builtin.copy:
+        dest: "/home/{{ target_user }}/.config/systemd/user/chromium-docker.service"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Chromium in Docker (X11)
+          After=graphical-session.target
+          Wants=graphical-session.target
+
+          [Service]
+          Type=simple
+          ExecStart=%h/bin/chromium-docker-autostart.sh
+          Restart=on-failure
+          Environment=DISPLAY={{ display_default }}
+
+          [Install]
+          WantedBy=default.target
+
+    - name: "systemd --user daemon-reload"
+      ansible.builtin.systemd:
+        daemon_reload: yes
+        scope: user
+      become_user: "{{ target_user }}"
+
+    - name: "Enable + start Chromium user service"
+      ansible.builtin.systemd:
+        name: chromium-docker.service
+        enabled: yes
+        state: started
+        scope: user
+      become_user: "{{ target_user }}"
+
+    ########################################################################
+    # 4) Optional: start once *now* (if RDP session already open)
+    ########################################################################
+    - name: "Kick the launcher once now"
+      ansible.builtin.command: "/home/{{ target_user }}/bin/chromium-docker-autostart.sh"
+      become_user: "{{ target_user }}"
+      changed_when: true

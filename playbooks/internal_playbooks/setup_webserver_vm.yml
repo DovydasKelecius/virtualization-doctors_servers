@@ -1,0 +1,116 @@
+---
+- name: "Webserver set up"
+  hosts: webserver
+  become: yes
+  vars_files:
+    - ../vars_files/sudo_pass.yml
+  vars:
+    webserver_become_pass: "{{ webserver_become_pass }}"
+    web_user: "webserver"
+
+  tasks:
+    - name: "Install dependencies"
+      ansible.builtin.apt:
+        pkg:
+          - vim # tmp for test
+          - ca-certificates
+          - curl
+          - gnupg
+          - python3-apt
+        state: latest
+        update_cache: yes
+
+    - name: "Check if docker key exists"
+      ansible.builtin.stat:
+        path: /etc/apt/keyrings/docker.gpg
+      register: docker_gpg
+
+    - name: "Create APT keyring directory"
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+        owner: root
+        group: root
+
+    - name: "Download docker armored signature"
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/debian/gpg
+        dest: /tmp/docker.asc
+      when: not docker_gpg.stat.exists
+
+    - name: "Dearmor docker asc"
+      command: gpg --dearmor -o /etc/apt/keyrings/docker.gpg /tmp/docker.asc
+      when: not docker_gpg.stat.exists
+
+    - name: "Clean up temporary GPG file"
+      ansible.builtin.file:
+        path: /tmp/docker.asc
+        state: absent
+
+    - name: "Add docker apt repository"
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+        state: present
+        update_cache: yes
+        filename: docker
+
+    - name: "Install docker"
+      ansible.builtin.apt:
+        pkg:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: latest
+        update_cache: yes
+
+    - name: "Add user to the docker group"
+      ansible.builtin.user:
+        name: "{{ web_user }}"
+        groups: docker
+        append: yes
+
+    - name: "Ensure docker is running"
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: "Clone webserver from git"
+      ansible.builtin.git:
+        repo: https://github.com/DovydasKelecius/virtualization-doctors_servers.git
+        dest: "/home/{{ web_user }}/webserver"
+        version: main
+      become: yes
+      become_user: "{{ web_user }}"
+
+    - name: "Create .env file with decrypted secrets"
+      ansible.builtin.copy:
+        content: |
+          DB_USER={{ db_user }}
+          DB_PASSWORD={{ db_passwd }}
+        dest: "/home/{{ web_user }}/webserver/.env"
+        mode: "0600"
+      no_log: true
+      become: yes
+      become_user: "{{ web_user }}"
+
+    - name: "Run docker compose"
+      community.docker.docker_compose_v2:
+        project_src: "/home/{{ web_user }}/webserver"
+        state: present
+        build: always
+        env_files:
+          - "/home/{{ web_user }}/webserver/.env"
+      become: yes
+      become_user: "{{ web_user }}"
+
+    - name: "Deletion of .env file"
+      ansible.builtin.file:
+        path: "/home/{{ web_user }}/webserver/.env"
+        state: absent
+      no_log: True
+      become: yes
+      become_user: "{{ web_user }}"

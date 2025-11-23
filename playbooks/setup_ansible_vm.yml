@@ -1,38 +1,56 @@
 - name: Configure Ansible VM to run Ansible on itself
   hosts: ansible
+  gather_facts: false
   become: true
-  gather_facts: false # 1. SKIP GATHERING FACTS INITIALLY
+  vars_files:
+    - ../vars_files/sudo_pass.yml
+  vars:
+    ansible_become_pass: "{{ ansible_sudo_pass }}"
 
   tasks:
-    
-    # --- PHASE 1: RAW BOOTSTRAP (No Python Required) ---
-    # These tasks MUST come first and MUST use 'raw'.
+    # ───────────────────── PHASE 1: RAW BOOTSTRAP ─────────────────────
+    - name: SSH Connectivity Check
+      ansible.builtin.wait_for_connection:
+        timeout: 180
+      delegate_to: localhost
+      become: false
 
-    - name: 1. Ensure APT sources are correctly initialized
-      ansible.builtin.raw: |
-        # Back up and create new sources list
-        sudo mv /etc/apt/sources.list /etc/apt/sources.list.bak
-        # Use 'noble' for Ubuntu 22.04. Change to 'noble' if 24.04.
-        sudo bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ noble main restricted universe multiverse" > /etc/apt/sources.list'
-        sudo bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ noble-updates main restricted universe multiverse" >> /etc/apt/sources.list'
-        sudo bash -c 'echo "deb http://security.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list'
-      changed_when: true
+    - name: 1. Grant sudo + create sources.list
+      raw: >-
+        echo "ansible ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/ansible >/dev/null &&
+        sudo mkdir -p /etc/apt/sources.list.d &&
+        echo "deb http://archive.ubuntu.com/ubuntu noble main restricted universe multiverse" | sudo tee /etc/apt/sources.list >/dev/null &&
+        echo "deb http://archive.ubuntu.com/ubuntu noble-updates main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list >/dev/null &&
+        echo "deb http://security.ubuntu.com/ubuntu noble-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list >/dev/null
+      changed_when: false
 
-    - name: 2. 🐍 Install Python & Security Tools (Critical)
-      ansible.builtin.raw: sudo apt update && sudo apt install -y python3 python3-minimal ca-certificates gnupg2
-      changed_when: true
+    - name: 2. NUCLEAR APT LOCK KILLER
+      raw: |
+        sudo systemctl stop apt-daily.service apt-daily.timer apt-daily-upgrade.service apt-daily-upgrade.timer || true
+        sudo killall -9 apt apt-get dpkg unattended-upgrades cloud-init || true
+        sudo fuser -vk /var/lib/dpkg/lock* /var/lib/apt/lists/lock /var/cache/apt/archives/lock || true
+        sudo rm -f /var/lib/dpkg/lock* /var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock-frontend
+        sudo dpkg --configure -a || true
+      changed_when: false
 
-    # --- PHASE 2: STABILIZE SYSTEM (Python is now available) ---
-    
-    - name: 3. Gather facts now that Python is installed
-      ansible.builtin.setup:
+    - name: 3. Install Python3 + openssh-server
+      raw: sudo DEBIAN_FRONTEND=noninteractive apt update -y && sudo DEBIAN_FRONTEND=noninteractive apt install -y python3 openssh-server
+      changed_when: false
 
-    - name: 4. Aggressively resolve system dependency conflicts
-      ansible.builtin.apt:
-        upgrade: dist 
-        autoremove: yes
+    # ───── NORMAL ANSIBLE FROM HERE ON ─────
+    - name: Gather facts
+      setup:
+
+    - name: Full system upgrade
+      apt:
         update_cache: yes
-      changed_when: true
+        upgrade: dist
+        autoremove: yes
+        autoclean: yes
+      register: upgrade
+      retries: 10
+      delay: 15
+      until: upgrade is succeeded
 
     # --- PHASE 3: APPLICATION SETUP ---
 
@@ -48,6 +66,8 @@
           - python3-pip
           - python3-venv
           - sudo
+          - ansible-mitogen
+          - python3-mitogen
         state: present
         update_cache: no # Cache was updated in the previous task
 
@@ -56,12 +76,68 @@
         name: ansible
         state: present
 
-    - name: 7. Ensure Python virtual environment exists
-      ansible.builtin.command:
-        cmd: python3 -m venv /home/ansible/.venv
-        creates: /home/ansible/.venv
-      become: true
-      become_user: ansible 
+        # ───────────────────── 7. Create isolated Python venv in ~/.venv ─────────────────────
+    - name: 7.1 Install required system packages for venv
+      ansible.builtin.apt:
+        name:
+          - python3-venv
+          - python3-pip
+          - python3-full
+        state: present
+        update_cache: yes
+      become: yes
+
+    - name: 7.2 Create venv at /home/ansible/.venv
+      ansible.builtin.command: python3 -m venv /home/ansible/.venv
+      args:
+        creates: /home/ansible/.venv/bin/activate
+      become: yes
+      become_user: ansible
+
+    - name: 7.3 Upgrade pip inside .venv
+      ansible.builtin.pip:
+        name: pip
+        state: latest
+        executable: /home/ansible/.venv/bin/pip
+      become_user: ansible
+
+    - name: 7.4 Install required packages into .venv
+      ansible.builtin.pip:
+        name:
+          - pyone
+          - ansible-core
+          - mitogen
+        executable: /home/ansible/.venv/bin/pip
+      become_user: ansible
+
+    - name: 7.5 Install community.general collection
+      ansible.builtin.command: /home/ansible/.venv/bin/ansible-galaxy collection install community.general
+      become_user: ansible
+      environment:
+        PATH: /home/ansible/.venv/bin:{{ ansible_env.PATH }}
+
+    # ───────────────────── 8. Auto-activate ~/.venv on login ─────────────────────
+    - name: 8.1 Add .venv auto-activation to .bashrc
+      ansible.builtin.blockinfile:
+        path: /home/ansible/.bashrc
+        marker: "# {mark} ANSIBLE .VENV AUTO-ACTIVATION"
+        block: |
+          # >>> Ansible .venv auto-activation >>>
+          if [ -f "/home/ansible/.venv/bin/activate" ]; then
+              source /home/ansible/.venv/bin/activate
+              export ANSIBLE_CONFIG=/home/ansible/playbooks/ansible.cfg
+          fi
+          # <<< Ansible .venv auto-activation <<<
+        create: yes
+        owner: ansible
+        mode: '0644'
+
+    - name: 8.2 Ensure PATH includes .venv/bin (fallback)
+      ansible.builtin.lineinfile:
+        path: /home/ansible/.bashrc
+        line: 'export PATH="/home/ansible/.venv/bin:$PATH"'
+        create: yes
+        owner: ansible
 
     - name: 8. Install OpenNebula Python API (pyone) into VENV
       ansible.builtin.pip:
@@ -80,3 +156,93 @@
         group: yes
       become: true
       become_user: ansible
+
+    - name: 10. Configure Ansible to use Mitogen for performance
+      ansible.builtin.copy:
+        dest: /home/ansible/.ansible.cfg
+        content: |
+          [defaults]
+          interpreter_python = auto_silent
+          strategy_plugins = /home/ansible/mitogen-0.3.30/ansible_mitogen/plugins/strategy
+          strategy = mitogen_linear
+
+    - name: 11. Verify Ansible installation
+      ansible.builtin.command:
+        cmd: /usr/bin/ansible --version
+      register: ansible_version_output
+
+    - name: 12. Display Ansible version
+      ansible.builtin.debug:
+        var: ansible_version_output.stdout
+
+    - name: 13. Copy internal playbooks to ansible-vm
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: /home/ansible/playbooks/
+        owner: ansible
+        group: ansible
+        mode: '0644'
+      loop:
+        - { src: ./internal_playbooks/deploy_remaining_vms.yml }
+        - { src: ./internal_playbooks/deploy_one_vm.yml }
+        - { src: ./internal_playbooks/setup_db_vm.yml }
+        - { src: ./internal_playbooks/setup_webserver_vm.yml }
+        - { src: ./internal_playbooks/setup_client_vm.yml }
+      loop_control:
+        label: "{{ item.src | basename }}"
+
+    - name: 13. Copy vars_files to ansible-vm
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: /home/ansible/vars_files/
+        owner: ansible
+        group: ansible
+        mode: '0644'
+      loop:
+        - { src: ../vars_files/one_creds.yml }
+        - { src: ../vars_files/sudo_pass.yml }
+        - { src: ../vars_files/hospital_20251108_185700.sql }
+      loop_control:
+        label: "{{ item.src | basename }}"
+
+  
+# Run this ONCE inside the ansible-vm to generate a dedicated deployment key
+    - name: Generate ed25519 key pair (no passphrase)
+      community.crypto.openssh_keypair:
+        path: /home/ansible/.ssh/id_rsa
+        type: ed25519
+        size: 256
+        comment: ansible@{{ ansible_fqdn | default(inventory_hostname) }}
+        state: present
+      register: keygen
+
+    - name: Set correct permissions
+      ansible.builtin.file:
+        path: "{{ item }}"
+        owner: ansible
+        group: ansible
+        mode: "{{ '0600' if 'private' in item else '0644' }}"
+      loop:
+        - /home/ansible/.ssh/id_rsa
+        - /home/ansible/.ssh/id_rsa.pub
+
+    - name: Show public key (for reference)
+      ansible.builtin.command: cat /home/ansible/.ssh/id_rsa.pub
+      register: pubkey
+      changed_when: false
+
+    - name: Success – key ready!
+      ansible.builtin.debug:
+        msg: |
+          Dedicated deployment key created!
+          Public key:
+          {{ pubkey.stdout }}
+      
+    - name: Copy your local vault_password.sh into the VM
+      ansible.builtin.copy:
+        src: ../vault_password.sh
+        dest: /home/ansible/playbooks/vault_password.sh
+        owner: ansible
+        group: ansible
+        mode: '0700'
+      no_log: true

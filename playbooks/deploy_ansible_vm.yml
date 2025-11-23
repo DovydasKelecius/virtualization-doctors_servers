@@ -1,78 +1,188 @@
 ---
-- name: Deploy new Ansible VM on OpenNebula
+- name: Deploy Ansible VM (no one_vm_info)
   hosts: localhost
   become: false
   gather_facts: false
   vars_files:
-    - ../vars_files/vault_pass_ansible.yml
+    - ../vars_files/one_creds.yml
     - ../vars_files/sudo_pass.yml
-
   vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
     ansible_become_pass: "{{ ansible_sudo_pass }}"
-    ssh_key_path: "{{ lookup('env','HOME') }}/.ssh/id_rsa.pub"
-
+    vm_base: ansible
+    vm_name: "rtfm_ansible"
+    template_id: 2974
+    max_wait_seconds: 600
 
   tasks:
-    - name: Create ansible_vm
+    # ------------------------------------------------------------------
+    # 1. Load credentials
+    # ------------------------------------------------------------------
+    - name: Load vault
+      include_vars:
+        file: ../vars_files/one_creds.yml
+        name: creds
+      no_log: true
+
+    - name: Set user/password
+      set_fact:
+        vm_user: "{{ creds.opennebula_accounts[vm_base].user }}"
+        vm_password: "{{ creds.opennebula_accounts[vm_base].password }}"
+
+    # ------------------------------------------------------------------
+    # 2. Create VM
+    # ------------------------------------------------------------------
+    - name: Create VM
       community.general.one_vm:
         api_url: "https://grid5.mif.vu.lt/cloud3/RPC2"
-        api_username: "{{ ansible_vm_user }}"
-        api_password: "{{ ansible_vm_password }}"
-        template_id: 2974
+        api_username: "{{ vm_user }}"
+        api_password: "{{ vm_password }}"
+        template_id: "{{ template_id }}"
         mode: 600
         state: present
-        cpu: 0.2
+        cpu: 0.3
         vcpu: 1
         memory: 1 GB
         disk_size: 4 GB
         attributes:
-          NAME: "rtfm_ansible"
-      delegate_to: localhost
-      register: vm_output
-
-    - name: Wait for proper initialization before SSH
-      ansible.builtin.pause:
-        seconds: 20
-
-    - name: Show VM deployment info
-      debug:
-        var: vm_output
+          NAME: "{{ vm_name }}"
+          SSH_PUBLIC_KEY: "{{ lookup('file', '~/.ssh/id_rsa.pub') | trim }}"
+      register: vm_create
+      retries: 3
+      delay: 10
+      until: vm_create is succeeded
 
     - name: Wait until we can SSH
       ansible.builtin.wait_for_connection:
         timeout: 120
         delay: 5
 
-    # --- Dynamic Variable Extraction ---
-    # Optional: Define the dynamic variables for clean reuse
-    - name: Set dynamic connection variables
+    - name: Extract VM ID
       set_fact:
-        vm_public_ip: "{{ vm_output.instances[0].attributes.PUBLIC_IP }}"
-        # Extract the port number (e.g., '11914:22' -> '11914')
-        vm_ssh_port: "{{ vm_output.instances[0].attributes.TCP_PORT_FORWARDING.split(':')[0] }}"
+        vm_id: "{{ vm_create.instances[0].vm_id }}"
 
-    # --- Debugging (Optional but recommended) ---
-    - name: Debug dynamic connection info
+    # ------------------------------------------------------------------
+    # 3. Poll VM until RUNNING + public access ready
+    # ------------------------------------------------------------------
+    - name: Wait for VM to be RUNNING and have SSH port
+      community.general.one_vm:
+        api_url: "https://grid5.mif.vu.lt/cloud3/RPC2"
+        api_username: "{{ vm_user }}"
+        api_password: "{{ vm_password }}"
+        instance_ids: "{{ vm_id }}"
+        state: present
+      register: vm_poll
+      until: >
+        vm_poll.instances[0].state == "ACTIVE" and
+        vm_poll.instances[0].lcm_state == "RUNNING" and
+        (
+          vm_poll.instances[0].attributes.TCP_PORT_FORWARDING is defined or
+          vm_poll.instances[0].attributes.GRAPHICS is defined
+        )
+      retries: "{{ (max_wait_seconds / 10) | int }}"
+      delay: 10
+
+    # ------------------------------------------------------------------
+    # 4. Extract public access
+    # ------------------------------------------------------------------
+    - name: Extract internal and external IP, and SSH port
+      set_fact:
+        external_ip: "{{ vm_poll.instances[0].attributes.PUBLIC_IP }}"
+        internal_ip: "{{ vm_poll.instances[0].networks[0].ip }}"
+        ssh_port: >-
+          {{
+            (
+              (
+                vm_poll.instances[0].attributes.TCP_PORT_FORWARDING
+                | default(vm_poll.instances[0].attributes.GRAPHICS.PORT | default('22'))
+              )
+              .split(':')[0]
+              .split() | first
+            )
+            | int
+          }}
+
+    - name: Debug public access
       debug:
-        msg: "Ansible VM deployed at {{ vm_public_ip }} on PORT {{ vm_ssh_port }}"
-      vars:
-        vm_public_ip: "{{ vm_output.instances[0].attributes.PUBLIC_IP }}"
-        vm_ssh_port: "{{ vm_output.instances[0].attributes.TCP_PORT_FORWARDING.split(':')[0] }}"
+        msg: "SSH: {{ external_ip }}:{{ ssh_port }} (ID: {{ vm_id }})"
 
+    # ------------------------------------------------------------------
+    # 5. Save to JSON
+    # ------------------------------------------------------------------
+    - name: Build VM record
+      set_fact:
+        vm_details:
+          id: "{{ vm_id }}"
+          name: "{{ vm_poll.instances[0].vm_name }}"
+          internal_ip: "{{ internal_ip }}"
+          public_ip: "{{ external_ip }}"
+          ssh_port: "{{ ssh_port }}"
+          base: "{{ vm_base }}"
+          user: "{{ vm_user }}"
 
-    # --- Inventory and SSH Fix ---
+    - name: Save to JSON
+      shell: |
+        FILE="tmp/opennebula_deployed_vms.json"
+        [ ! -f "$FILE" ] || ! grep -q '\[' "$FILE" && echo '[]' > "$FILE"
+        TMP=$(mktemp)
+        jq --argjson vm '{{ vm_details | to_json }}' '. += [$vm]' "$FILE" > "$TMP" && mv "$TMP" "$FILE"
+      delegate_to: localhost
 
-    - name: Add new VM to inventory (to memory) - CORRECTED for dynamic IP/Port
+    # ------------------------------------------------------------------
+    # 6. Wait for SSH to be actually reachable
+    # ------------------------------------------------------------------
+
+    - name: Ensure SSH key exists + read public key
+      delegate_to: localhost
+      block:
+        - name: Generate key pair (only once)
+          command: ssh-keygen -t rsa -f ~/.ssh/id_rsa -N "" -q
+          args:
+            creates: ~/.ssh/id_rsa
+
+        - name: Read public key into fact
+          slurp:
+            src: ~/.ssh/id_rsa.pub
+          register: ssh_pub_key
+
+        - name: Set final SSH public key fact (clean string)
+          set_fact:
+            final_ssh_key: "{{ ssh_pub_key.content | b64decode | trim }}"
+
+    - name: Wait for SSH port to be open (max 3 minutes)
+      ansible.builtin.wait_for:
+        host: "{{ external_ip }}"
+        port: "{{ ssh_port }}"
+        state: started
+        timeout: 180
+        delay: 10
+      delegate_to: localhost
+
+    - name: Wait for SSH daemon to respond
+      ansible.builtin.wait_for_connection:
+        timeout: 180
+      delegate_to: localhost
+
+    # ------------------------------------------------------------------
+    # 7. Add to inventory
+    # ------------------------------------------------------------------
+    - name: Add to in-memory inventory
       add_host:
-        name: "ansible_vm"
-        ansible_host: "{{ vm_output.instances[0].attributes.PUBLIC_IP }}"
-        ansible_port: "{{ vm_output.instances[0].attributes.TCP_PORT_FORWARDING.split(':')[0] }}"
-        ansible_user: "ansible"
+        name: ansible_vm
+        ansible_host: "{{ external_ip }}"
+        ansible_port: "{{ ssh_port }}"
+        ansible_user: ansible
         ansible_ssh_private_key_file: "~/.ssh/id_rsa"
+        ansible_become_pass: "{{ ansible_become_pass }}"
 
-    - name: Save VM to inventory file - CORRECTED for dynamic IP/Port
+    - name: Write inventory file
       copy:
-        dest: "../inventory.ini"
+        dest: ../inventory.ini
         content: |
           [ansible]
-          {{ vm_output.instances[0].attributes.PUBLIC_IP }} ansible_user=ansible ansible_port={{ vm_output.instances[0].attributes.TCP_PORT_FORWARDING.split(':')[0] }} ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_become_pass={{ ansible_become_pass }}
+          {{ external_ip }} ansible_port={{ ssh_port }} ansible_user=ansible ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        mode: '0644'
+
+    - name: Success
+      debug:
+        msg: "Ansible VM READY at {{ external_ip }}:{{ ssh_port }}"
