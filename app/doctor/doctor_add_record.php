@@ -69,6 +69,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </form>
 </div>
 
-<a href="doctor_patient_details.php?patient_id=<?= $patient_id ?>&appointment_id=<?= $appointment_id ?>" class="back">Grįžti į paciento duomenis</a>
-</body>
+    <a href="doctor_patient_details.php?patient_id=<?= $patient_id ?>&appointment_id=<?= $appointment_id ?>" class="btn btn-secondary">Grįžti į paciento duomenis</a></body>
 </html>

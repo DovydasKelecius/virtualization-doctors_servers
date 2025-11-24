@@ -42,7 +42,7 @@ if (isset($_SESSION['patient_id'])) {
       <button type="submit">Prisijungti</button>
     </form>
     
-    <a href="index.php" class="back">Grįžti į pagrindinį puslapį</a>
+    <a href="index.php" class="btn btn-secondary">Grįžti į pagrindinį puslapį</a>
   </div>
 </body>
 </html>

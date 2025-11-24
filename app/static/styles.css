@@ -122,7 +122,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* === Simplified Buttons === */
-.btn, button, button[type="submit"], .back, .back-btn, .back-link, a.specialization {
+.btn, button, button[type="submit"], a.specialization {
     display: block; /* Stack vertically */
     max-width: 400px; /* Prevent buttons from being too wide */
     margin: 15px auto; /* Center horizontally and add vertical space */
@@ -140,7 +140,7 @@ input:focus, select:focus, textarea:focus {
     transition: background-color 0.2s;
 }
 
-.btn:hover, button:hover, button[type="submit"]:hover, .back:hover, .back-btn:hover, .back-link:hover, a.specialization:hover {
+.btn:hover, button:hover, button[type="submit"]:hover, a.specialization:hover {
     background-color: var(--primary-hover);
     color: white;
     text-decoration: none;
@@ -154,17 +154,17 @@ input:focus, select:focus, textarea:focus {
     max-width: none; /* Remove max-width constraint */
 }
 
-.btn-secondary, .back, .back-btn, .back-link {
+.btn-secondary {
     background-color: var(--secondary-color);
 }
-.btn-secondary:hover, .back:hover, .back-btn:hover, .back-link:hover {
+.btn-secondary:hover {
     background-color: var(--secondary-hover);
 }
 
-.btn-danger, .btn-cancel {
+.btn-danger {
     background-color: var(--danger-color);
 }
-.btn-danger:hover, .btn-cancel:hover {
+.btn-danger:hover {
     background-color: #c82333;
 }
 

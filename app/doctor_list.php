@@ -65,6 +65,5 @@ $patient = $pstmt->fetch(PDO::FETCH_ASSOC);
 
   <?php endif; ?>
 
-  <a href="doctor_registration.php" class="back">Grįžti atgal</a>
-</body>
+      <a href="doctor_registration.php" class="btn btn-secondary">Grįžti atgal</a></body>
 </html>

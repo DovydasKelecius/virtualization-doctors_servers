@@ -16,7 +16,7 @@
       </p>
     <?php endif; ?>
 
-    <form id="registerForm" action="register_process.php" method="POST" novalidate>
+    <form action="register_process.php" method="POST">
       <div class="input-group">
         <div class="input-item">
           <label for="first_name">Vardas:</label>
@@ -82,111 +82,13 @@
         </div>
       </div>
 
-      <button type="submit" id="submitBtn" disabled>Registruotis</button>
+      <button type="submit">Registruotis</button>
     </form>
 
-    <a href="../index.php" class="back">Grįžti į pagrindinį puslapį</a>
+    <a href="../index.php" class="btn btn-secondary">Grįžti į pagrindinį puslapį</a>
   </div>
 
-  <script>
-  const form = document.getElementById('registerForm');
-  const submitBtn = document.getElementById('submitBtn');
 
-  const fields = [
-    'first_name', 'last_name', 'gender',
-    'email', 'personal_code', 'password',
-    'password_repeat', 'phone'
-  ];
-
-  // Add input + blur listeners
-  fields.forEach(id => {
-    const el = document.getElementById(id);
-    el.addEventListener('blur', () => validateField(id));
-    el.addEventListener('input', () => {
-      const err = document.getElementById('err_' + id);
-      err.style.display = 'none';
-      el.classList.remove('error');
-      validateForm();
-    });
-  });
-
-  // Show password hint only while focused
-  const passwordInput = document.getElementById('password');
-  const passwordHelper = document.getElementById('help_password');
-  passwordInput.addEventListener('focus', () => passwordHelper.style.display = 'block');
-  passwordInput.addEventListener('blur', () => passwordHelper.style.display = 'none');
-
-  function validateField(id) {
-    const el = document.getElementById(id);
-    const err = document.getElementById('err_' + id);
-    const value = el.value.trim();
-    let message = '';
-
-    const nameRegex = /^[A-Za-zĄČĘĖĮŠŲŪŽąčęėįšųūž]+$/u; // Lithuanian letters only
-    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-    const phoneRegex = /^\+?[\d\s\-\(\)]{0,20}\d$/;
-
-    switch (id) {
-      case 'first_name':
-      case 'last_name':
-        if (!value) message = 'Šis laukelis privalomas';
-        else if (!nameRegex.test(value)) message = 'Leidžiamos tik raidės';
-        else if (value.length === 29) message = 'Pasiektas simbolių limitas (30)';
-        break;
-
-      case 'gender':
-        if (!value) message = 'Pasirinkite lytį';
-        break;
-
-      case 'email':
-        if (!value) message = 'Įveskite el. paštą';
-        else if (value.length > 40) message = 'El. paštas per ilgas (max 40)';
-        else if (!emailRegex.test(value)) message = 'Neteisingas el. pašto formatas';
-        break;
-
-      case 'personal_code':
-        if (!/^\d{11}$/.test(value)) message = 'Asmens kodas turi būti 11 skaitmenų';
-        break;
-
-      case 'password':
-        if (value.length < 6) message = 'Slaptažodis per trumpas';
-        break;
-
-      case 'password_repeat':
-        const pass = document.getElementById('password').value;
-        if (value !== pass) message = 'Slaptažodžiai nesutampa';
-        break;
-
-      case 'phone':
-        if (!phoneRegex.test(value)) message = 'Netinkamas telefono formatas';
-        break;
-    }
-
-    if (message) {
-      err.textContent = message;
-      err.style.display = 'block';
-      el.classList.add('error');
-    } else {
-      err.textContent = '';
-      err.style.display = 'none';
-      el.classList.remove('error');
-    }
-
-    validateForm();
-  }
-
-  function validateForm() {
-    let ok = true;
-    fields.forEach(id => {
-      const el = document.getElementById(id);
-      const err = document.getElementById('err_' + id);
-      if (el.value.trim() === '' || (err && err.style.display === 'block')) {
-        ok = false;
-      }
-    });
-    submitBtn.disabled = !ok;
-  }
-</script>
 
 </body>
 </html>

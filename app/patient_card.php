@@ -132,7 +132,7 @@ try {
       <button type="submit">Atnaujinti</button>
     </form>
 
-    <a href="patient_home.php" class="back-link">Grįžti atgal</a>
+    <a href="patient_home.php" class="btn btn-secondary">Grįžti atgal</a>
 
     <div id="medicalHistoryModal" class="modal">
         <div class="modal-content">

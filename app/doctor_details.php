@@ -101,7 +101,7 @@ while ($start < $end) {
     <?php endforeach; ?>
   </div>
 
-  <a href="javascript:history.back()" class="back-btn">Grįžti atgal</a>
+  <a href="javascript:history.back()" class="btn btn-secondary">Grįžti atgal</a>
 
 </body>
 </html>

@@ -138,7 +138,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <button type="submit">Patvirtinti vizitą</button>
 </form>
 
-<a href="javascript:history.back()" class="back">Grįžti atgal</a>
+<a href="javascript:history.back()" class="btn btn-secondary">Grįžti atgal</a>
 
 </body>
 </html>
