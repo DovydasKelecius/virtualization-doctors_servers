@@ -105,7 +105,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <?php endif; ?>
 </div>
 
-<a href="doctor_home.php" class="back-btn">Grįžti atgal</a>
+<a href="doctor_home.php" class="btn btn-secondary">Grįžti atgal</a>
 
 </body>
 </html>

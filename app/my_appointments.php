@@ -85,6 +85,6 @@ $list = $appointments->fetchAll(PDO::FETCH_ASSOC);
       </div>
   <?php endif; ?>
 
-  <a href="patient_home.php" class="btn-back">Grįžti atgal</a>
+  <a href="patient_home.php" class="btn btn-secondary">Grįžti atgal</a>
 </body>
 </html>

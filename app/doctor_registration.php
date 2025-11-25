@@ -49,7 +49,7 @@ $specializations = $specStmt->fetchAll(PDO::FETCH_COLUMN);
                 $spec,
             ) ?>"><?= htmlspecialchars($spec) ?></a>
         <?php endforeach; ?>
-    <a href="patient_home.php" class="back">Grįžti atgal</a>
+    <a href="patient_home.php" class="btn btn-secondary">Grįžti atgal</a>
     </div>
 
 </body>
