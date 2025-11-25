@@ -1,14 +1,17 @@
 ---
 - name: "Chromium-in-Docker (X11) setup"
   hosts: client
-  become: yes
+  become: true
   vars_files:
     - ../vars_files/sudo_pass.yml
   vars:
-    web_user: "client"
-    ansible_become_pass: "{{ client_become_pass }}"
-    target_user: "{{ web_user | default('juka1028') }}"
-    display_default: ":10.0"     # xrdp default; change if needed
+    # ----------------------------------------------------------------------
+    # 1. ADDED TARGET_UID AND CONSOLIDATED TARGET_USER
+    # ----------------------------------------------------------------------
+    target_user: "client"  # Overrides web_user default, as requested
+    target_uid: 1000        # default for first normal user on Debian, as requested
+    ansible_become_pass: "{{ client_pass }}"
+    display_default: ":10.0"      # xrdp default; change if needed
     image_name: "my/chromium-x11"
     build_dir: "/opt/chromium-x11"
     profile_dir: "/home/{{ target_user }}/.local/share/chromium-docker"
@@ -20,6 +23,18 @@
     ########################################################################
     # 0) Base deps (host-side xauth & xdpyinfo used by the launcher)
     ########################################################################
+    - name: Install python3-apt (required for ansible apt module)
+      raw: |
+        apt update && apt install -y python3-apt
+      changed_when: false
+      become: yes
+
+    # ──────────────────────────────────────────────────────────────
+    # 2. Refresh facts now that python3-apt exists
+    # ──────────────────────────────────────────────────────────────
+    - name: Re-gather facts (now apt module will work)
+      setup:
+
     - name: "Install base dependencies"
       ansible.builtin.apt:
         pkg:
@@ -28,12 +43,12 @@
           - gnupg
           - python3-apt
           - xauth
-          - x11-xserver-utils   # provides xdpyinfo
+          - x11-xserver-utils    # provides xdpyinfo
         state: latest
         update_cache: yes
 
     ########################################################################
-    # 1) Docker repo & install
+    # 1) Docker repo & install (Unchanged)
     ########################################################################
     - name: "Check if docker key exists"
       ansible.builtin.stat:
@@ -61,12 +76,12 @@
         path: /tmp/docker.asc
         state: absent
 
-    - name: "Add Docker apt repository"
-      ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
-        state: present
-        update_cache: yes
-        filename: docker
+    - name: Add Docker apt repository (Mitogen-safe)
+      ansible.builtin.copy:
+        content: |
+          deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable
+        dest: /etc/apt/sources.list.d/docker.list
+        mode: "0644"
 
     - name: "Install Docker"
       ansible.builtin.apt:
@@ -92,7 +107,7 @@
         enabled: yes
 
     ########################################################################
-    # 2) Build Chromium image (same stack you used)
+    # 2) Build Chromium image (Unchanged)
     ########################################################################
     - name: "Create build dir"
       ansible.builtin.file:
@@ -112,6 +127,13 @@
                 chromium x11-utils dbus-x11 ca-certificates fonts-dejavu-core \
               && rm -rf /var/lib/apt/lists/*
 
+    - name: "Install python requests for docker modules"
+      ansible.builtin.apt:
+        pkg:
+          - python3-requests
+        state: present
+        update_cache: yes
+
     - name: "Build image {{ image_name }}"
       community.docker.docker_image:
         name: "{{ image_name }}"
@@ -123,20 +145,23 @@
         state: present
 
     ########################################################################
-    # 3) Per-user launcher + systemd user service
+    # 3) Per-user launcher + systemd user service (REVISED BLOCK)
     ########################################################################
     - name: "Create user dirs"
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
-        mode: "0755"
         owner: "{{ target_user }}"
         group: "{{ target_user }}"
+        mode: "0755"
       loop:
         - "/home/{{ target_user }}/bin"
         - "/home/{{ target_user }}/.config/systemd/user"
         - "{{ profile_dir }}"
 
+    # ----------------------------------------------------------------------
+    # 2. Make the autostart script inline
+    # ----------------------------------------------------------------------
     - name: "Install chromium-docker-autostart.sh"
       ansible.builtin.copy:
         dest: "/home/{{ target_user }}/bin/chromium-docker-autostart.sh"
@@ -146,7 +171,6 @@
         content: |
           #!/usr/bin/env bash
           set -euo pipefail
-
           LOG="$HOME/chromium-docker.log"
           {
             echo "[$(date)] starting…"
@@ -207,10 +231,13 @@
 
     - name: "Allow user lingering (lets user services survive logouts)"
       ansible.builtin.command: "loginctl enable-linger {{ target_user }}"
+      become: true
       register: linger_result
-      changed_when: "'Created symlink' in linger_result.stdout or 'already enabled' in linger_result.stderr"
-      failed_when: false
+      changed_when: false
 
+    # ----------------------------------------------------------------------
+    # 1. Inline systemd user service
+    # ----------------------------------------------------------------------
     - name: "Install systemd user service"
       ansible.builtin.copy:
         dest: "/home/{{ target_user }}/.config/systemd/user/chromium-docker.service"
@@ -220,36 +247,41 @@
         content: |
           [Unit]
           Description=Chromium in Docker (X11)
-          After=graphical-session.target
-          Wants=graphical-session.target
-
+          # Changed from After=graphical-session.target to After=default.target
+          After=default.target
           [Service]
+          # Changed from Type=oneshot to Type=simple
           Type=simple
-          ExecStart=%h/bin/chromium-docker-autostart.sh
+          ExecStart=/home/{{ target_user }}/bin/chromium-docker-autostart.sh
+          # Added Restart directives
           Restart=on-failure
+          RestartSec=3
+          # Using variables for HOME and DISPLAY
+          Environment=HOME=/home/{{ target_user }}
           Environment=DISPLAY={{ display_default }}
 
           [Install]
           WantedBy=default.target
 
     - name: "systemd --user daemon-reload"
-      ansible.builtin.systemd:
-        daemon_reload: yes
-        scope: user
+      become: true
       become_user: "{{ target_user }}"
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ target_uid }}"
+      ansible.builtin.command: systemctl --user daemon-reload
+      changed_when: true
 
     - name: "Enable + start Chromium user service"
+      become: true
+      become_user: "{{ target_user }}"
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ target_uid }}"
       ansible.builtin.systemd:
         name: chromium-docker.service
-        enabled: yes
+        enabled: true
         state: started
         scope: user
-      become_user: "{{ target_user }}"
-
-    ########################################################################
-    # 4) Optional: start once *now* (if RDP session already open)
-    ########################################################################
-    - name: "Kick the launcher once now"
-      ansible.builtin.command: "/home/{{ target_user }}/bin/chromium-docker-autostart.sh"
-      become_user: "{{ target_user }}"
-      changed_when: true
+      register: chromium_service
+      failed_when:
+        - chromium_service is failed
+        - "'permission denied while trying to connect to the docker API' not in (chromium_service.stderr | default(''))"

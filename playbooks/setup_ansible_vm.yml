@@ -5,7 +5,7 @@
   vars_files:
     - ../vars_files/sudo_pass.yml
   vars:
-    ansible_become_pass: "{{ ansible_sudo_pass }}"
+    ansible_become_pass: "{{ ansible_pass }}"
 
   tasks:
     - name: SSH Connectivity Check
@@ -217,7 +217,6 @@
         group: ansible
         mode: "{{ '0600' if 'private' in item else '0644' }}"
       loop:
-        - /home/ansible/.ssh/id_rsa
         - /home/ansible/.ssh/id_rsa.pub
 
     - name: Show public key (for reference)

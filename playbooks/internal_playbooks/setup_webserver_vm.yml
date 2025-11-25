@@ -5,7 +5,7 @@
   vars_files:
     - ../vars_files/sudo_pass.yml
   vars:
-    webserver_become_pass: "{{ webserver_become_pass }}"
+    ansible_become_pass: "{{ webserver_pass }}"
     web_user: "webserver"
 
   tasks:
@@ -19,6 +19,7 @@
           - python3-apt
         state: latest
         update_cache: yes
+        cache_valid_time: 3600
 
     - name: "Check if docker key exists"
       ansible.builtin.stat:
@@ -48,14 +49,14 @@
         path: /tmp/docker.asc
         state: absent
 
-    - name: "Add docker apt repository"
-      ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
-        state: present
-        update_cache: yes
-        filename: docker
+    - name: "Add Docker apt repository (bookworm proxy for noble)"
+      ansible.builtin.copy:
+        content: |
+          deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable
+        dest: /etc/apt/sources.list.d/docker.list
+        mode: '0644'
 
-    - name: "Install docker"
+    - name: "Install Docker"
       ansible.builtin.apt:
         pkg:
           - docker-ce
@@ -66,13 +67,13 @@
         state: latest
         update_cache: yes
 
-    - name: "Add user to the docker group"
+    - name: "Add {{ web_user }} to docker group"
       ansible.builtin.user:
         name: "{{ web_user }}"
         groups: docker
         append: yes
 
-    - name: "Ensure docker is running"
+    - name: "Ensure Docker is running"
       ansible.builtin.service:
         name: docker
         state: started
@@ -83,8 +84,6 @@
         repo: https://github.com/DovydasKelecius/virtualization-doctors_servers.git
         dest: "/home/{{ web_user }}/webserver"
         version: main
-      become: yes
-      become_user: "{{ web_user }}"
 
     - name: "Create .env file with decrypted secrets"
       ansible.builtin.copy:
@@ -94,8 +93,6 @@
         dest: "/home/{{ web_user }}/webserver/.env"
         mode: "0600"
       no_log: true
-      become: yes
-      become_user: "{{ web_user }}"
 
     - name: "Run docker compose"
       community.docker.docker_compose_v2:
@@ -104,13 +101,9 @@
         build: always
         env_files:
           - "/home/{{ web_user }}/webserver/.env"
-      become: yes
-      become_user: "{{ web_user }}"
 
     - name: "Deletion of .env file"
       ansible.builtin.file:
         path: "/home/{{ web_user }}/webserver/.env"
         state: absent
       no_log: True
-      become: yes
-      become_user: "{{ web_user }}"

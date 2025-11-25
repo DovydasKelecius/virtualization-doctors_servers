@@ -1,6 +1,0 @@
----
-- name: Deploy PostgreSQL with hospital data
-  hosts: db_server
-  become: yes
-  roles:
-    - role: db

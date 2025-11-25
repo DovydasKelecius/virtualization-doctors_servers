@@ -90,7 +90,6 @@
     - name: Create user {{ target_user }} if it doesn't exist
       ansible.builtin.user:
         name: "{{ target_user }}"
-        password: "{{ vm_base }}"
         shell: /bin/bash
         state: present
         groups: sudo 
@@ -107,6 +106,8 @@
         user: "{{ vm_base }}"
         state: present
         key: "{{ lookup('file', '/home/ansible/.ssh/id_rsa.pub') }}"
+
+    
 
 # ------------------------------------------------------------------
 # 5. Final Inventory Update
@@ -130,3 +131,18 @@
     groups: "{{ group_name }}"
     ansible_host: "{{ internal_ip }}"
     ansible_user: "{{ target_user }}"
+
+- name: Install python3 on {{ vm_name }} (works even with password-protected sudo)
+  delegate_to: localhost
+  shell: >-
+    sshpass -p "{{ target_user }}" ssh
+    -o StrictHostKeyChecking=no
+    -o UserKnownHostsFile=/dev/null
+    {{ target_user }}@{{ internal_ip }}
+    "echo '{{ target_user }}' | sudo -S DEBIAN_FRONTEND=noninteractive apt update &&
+     echo '{{ target_user }}' | sudo -S DEBIAN_FRONTEND=noninteractive apt install -y python3"
+  args:
+    executable: /bin/bash
+  changed_when: false
+  environment:
+    SSHPASS: "{{ target_user }}"
