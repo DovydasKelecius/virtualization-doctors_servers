@@ -76,7 +76,7 @@
         path: /tmp/docker.asc
         state: absent
 
-    - name: Add Docker apt repository (Mitogen-safe)
+    - name: Add Docker apt repository 
       ansible.builtin.copy:
         content: |
           deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable
