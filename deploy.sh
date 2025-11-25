@@ -22,12 +22,14 @@ ansible-galaxy collection install community.general --force
 echo "=== 2. Deploying Ansible VM ==="
 # REMOVED the broken -e ansible_python_interpreter line
 ansible-playbook "$MASTER_PLAYBOOK" \
+    -u root \
     --vault-password-file "$VAULT_PASS_SCRIPT" \
     -e 'host_key_checking=False' \
     || { echo "ERROR: Deploy failed"; exit 1; }
 
 echo "=== 3. Configuring Ansible VM ==="
 ansible-playbook -i "$INVENTORY_FILE" "$SETUP_PLAYBOOK" \
+    -u root \
     --vault-password-file "$VAULT_PASS_SCRIPT" \
     -e 'ansible_python_interpreter=/usr/bin/python3' \
     -e 'host_key_checking=False' \

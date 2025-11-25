@@ -1,82 +1,14 @@
-# Reusable task – creates one VM and adds it to inventory
-
-# --- Variable Assumptions ---
-# This task assumes the following variables are defined by the caller:
-# - vm_base: The key used to look up credentials (e.g., 'webserver')
-# - vm_name: The desired name for the VM instance (e.g., 'rtfm_webserver')
-# - template_id: The OpenNebula template ID
-# - group_name: The inventory group to add the VM to (e.g., 'webserver')
-# - creds: The vault-loaded dictionary containing OpenNebula accounts
-# - inventory_file: Path to the inventory file (e.g., '/home/ansible/inventory.ini')
-# - max_wait_seconds: (Optional) Timeout for polling (e.g., 600). Now defaults to 600s internally.
-
-- name: 1. Load credentials for {{ vm_base }}
+---
+# ------------------------------------------------------------------
+# 1. Credentials & ID Extraction
+# ------------------------------------------------------------------
+- name: Load credentials for {{ vm_base }}
   set_fact:
     one_user: "{{ creds.opennebula_accounts[vm_base].user }}"
     one_pass: "{{ creds.opennebula_accounts[vm_base].password }}"
-    vm_ssh_user: "ansible"
+    target_user: "{{ vm_base }}" 
 
-- name: DEBUG – Show user and password length (to confirm loading)
-  ansible.builtin.debug:
-    msg:
-      - "User: {{ one_user }}"
-      - "Pass length: {{ one_pass | length }}"
-      - "Template ID: {{ template_id }}"
-
-- name: 1.5.1. Generate and Read Public Key (Delegated to Localhost)
-  delegate_to: localhost
-  block:
-    - name: Generate key pair (only once)
-      command: ssh-keygen -t rsa -f ~/.ssh/id_rsa -N "" -q
-      args:
-        creates: ~/.ssh/id_rsa
-
-    - name: Read public key into fact
-      slurp:
-        src: ~/.ssh/id_rsa.pub
-      register: ssh_pub_key
-
-    - name: Set final SSH public key fact (clean string)
-      set_fact:
-        final_ssh_key: "{{ ssh_pub_key.content | b64decode | trim }}"
-
-- name: 1.5.2. Define Contextualization Script (Manual Key Setup)
-  set_fact:
-    # This script will run on the VM's first boot to create the 'ansible' user and inject the key.
-    context_script: |
-      #!/bin/bash
-      USER="{{ vm_ssh_user }}"
-      SSH_KEY="{{ final_ssh_key }}"
-      
-      # 1. Add user if they don't exist (critical for connecting)
-      if ! id -u $USER >/dev/null 2>&1; then
-          useradd -m $USER -s /bin/bash
-          # Grant full sudo permissions without password (required for Ansible tasks)
-          echo "$USER ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/90-ansible
-          chmod 440 /etc/sudoers.d/90-ansible
-      fi
-
-      # 2. Configure SSH for the new user
-      HOME_DIR=$(eval echo ~$USER)
-      mkdir -p $HOME_DIR/.ssh
-      echo "$SSH_KEY" > $HOME_DIR/.ssh/authorized_keys
-      chown -R $USER:$USER $HOME_DIR/.ssh
-      chmod 700 $HOME_DIR/.ssh
-      chmod 600 $HOME_DIR/.ssh/authorized_keys
-      
-      # 3. Ensure SSH daemon is running (important for older templates)
-      service ssh restart || true
-  delegate_to: localhost
-
-- name: 1.5.3. Base64 Encode Script for USER_DATA
-  set_fact:
-    user_data_b64: "{{ context_script | b64encode }}"
-  delegate_to: localhost
-
-# ------------------------------------------------------------------
-# 2. Create VM and extract ID
-# ------------------------------------------------------------------
-- name: Create VM {{ vm_name }} (Using USER_DATA Contextualization)
+- name: Create VM {{ vm_name }}
   community.general.one_vm:
     api_url: "https://grid5.mif.vu.lt/cloud3/RPC2"
     api_username: "{{ one_user }}"
@@ -86,9 +18,6 @@
     state: present
     attributes:
       NAME: "{{ vm_name }}"
-      # Using the base64 encoded script to manually inject the key and user:
-      USER_DATA: "{{ user_data_b64 }}"
-      # SSH_PUBLIC_KEY removed due to unreliability on OpenNebula 4.14.2
   register: vm_create
   retries: 3
   delay: 10
@@ -99,9 +28,9 @@
     vm_id: "{{ vm_create.instances[0].vm_id }}"
 
 # ------------------------------------------------------------------
-# 3. Poll VM until RUNNING + public access ready
+# 2. Polling for Networking
 # ------------------------------------------------------------------
-- name: Wait for VM to be RUNNING and have SSH port and Public IP
+- name: Wait for VM to be RUNNING and have Public IP
   community.general.one_vm:
     api_url: "https://grid5.mif.vu.lt/cloud3/RPC2"
     api_username: "{{ one_user }}"
@@ -116,104 +45,88 @@
       vm_poll.instances[0].attributes.PUBLIC_IP is defined and
       vm_poll.instances[0].attributes.TCP_PORT_FORWARDING is defined
     )
-  # Defaulting max_wait_seconds to 600s (60 retries @ 10s delay)
-  retries: "{{ (max_wait_seconds | default(600) / 10) | int }}"
+  retries: 60
   delay: 10
 
-# ------------------------------------------------------------------
-# 4. Extract public access
-# ------------------------------------------------------------------
-- name: Extract public IP and SSH port
+- name: Extract connection details
   set_fact:
-    # Use PUBLIC_IP for external access.
-    external_ip: "{{ vm_poll.instances[0].attributes.PUBLIC_IP | default('') }}"
-    internal_ip: "{{ vm_poll.instances[0].networks[0].ip | default('') }}"
-    # Extract the port from the TCP_PORT_FORWARDING string (e.g., "12721:22")
-    ssh_port: >-
-      {{
-        (
-          vm_poll.instances[0].attributes.TCP_PORT_FORWARDING | default('22:22')
-        ).split(':')[0] | int
-      }}
+    external_ip: "{{ vm_poll.instances[0].attributes.PUBLIC_IP }}"
+    internal_ip: "{{ vm_poll.instances[0].attributes.PRIVATE_IP }}"
+    # Robustly extract the port (handles spaces/formatting issues)
+    ssh_port: "{{ vm_poll.instances[0].attributes.TCP_PORT_FORWARDING.split(':')[0] | trim }}"
 
-- name: DEBUG - Show external access parameters
-  ansible.builtin.debug:
-    msg: "VM {{ vm_name }} SSH: {{ external_ip }}:{{ ssh_port }} (ID: {{ vm_id }})"
-  delegate_to: localhost
-
+- name: Debug Connection
+  debug: 
+    msg: "Target: {{ internal_ip }} (External: {{ external_ip }}:{{ ssh_port }})"
 
 # ------------------------------------------------------------------
-# 5. Wait for SSH to be actually reachable (critical, fixed order)
+# 3. Wait for SSH availability
 # ------------------------------------------------------------------
-
-- name: Ensure SSH key exists + read public key
-  delegate_to: localhost
-  block:
-    - name: Generate key pair (only once)
-      command: ssh-keygen -t rsa -f ~/.ssh/id_rsa -N "" -q
-      args:
-        creates: ~/.ssh/id_rsa
-
-    - name: Read public key into fact
-      slurp:
-        src: ~/.ssh/id_rsa.pub
-      register: ssh_pub_key
-
-    - name: Set final SSH public key fact (clean string)
-      set_fact:
-        final_ssh_key: "{{ ssh_pub_key.content | b64decode | trim }}"
-
-- name: Wait 60 seconds for OS boot/Cloud-Init/SSHD startup
-  ansible.builtin.pause:
-    seconds: 60 
-    prompt: "Paused 60s to allow Cloud-Init to finish key injection and SSHD to start."
-  delegate_to: localhost
-
-- name: Wait for SSH port to be open (max 5 minutes)
+- name: Wait for SSH port to be open
   ansible.builtin.wait_for:
-    host: "{{ external_ip }}"
-    port: "{{ ssh_port }}"
+    host: "{{ internal_ip }}"
+    port: 22
     state: started
-    timeout: 300 # Increased timeout for reliability
-    delay: 20 # Increased initial delay from 10s to 20s
+    timeout: 300
+    delay: 10
   delegate_to: localhost
 
-- name: Wait for SSH daemon to respond
-  ansible.builtin.wait_for_connection:
-    timeout: 180
-  delegate_to: localhost
+# ------------------------------------------------------------------
+# 4. The Injection -> Key Setup
+# ------------------------------------------------------------------
+- name: Add temp host for injection (Using Default Password)
+  add_host:
+    name: "temp_{{ vm_name }}"
+    ansible_host: "{{ internal_ip }}"
+    ansible_user: "{{ vm_base }}"
+    # !!! CHANGE THIS IF YOUR TEMPLATE PASSWORD IS NOT 'password' !!!
+    ansible_ssh_pass: "{{ vm_base }}"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 
+# We create the specific user (e.g. 'db', 'client') and add the key to them
+- name: Setup User and Keys on {{ vm_name }}
+  delegate_to: "temp_{{ vm_name }}"
+  block:
+    - name: Create user {{ target_user }} if it doesn't exist
+      ansible.builtin.user:
+        name: "{{ target_user }}"
+        password: "{{ vm_base }}"
+        shell: /bin/bash
+        state: present
+        groups: sudo 
+        append: yes
+
+    - name: Inject SSH Key for {{ target_user }}
+      ansible.posix.authorized_key:
+        user: "{{ target_user }}"
+        state: present
+        key: "{{ lookup('file', '/home/ansible/.ssh/id_rsa.pub') }}"
+
+    - name: Inject SSH Key for "{{ vm_base }}" (Backup access)
+      ansible.posix.authorized_key:
+        user: "{{ vm_base }}"
+        state: present
+        key: "{{ lookup('file', '/home/ansible/.ssh/id_rsa.pub') }}"
 
 # ------------------------------------------------------------------
-# 6. Add to Inventory (Dynamic Naming)
+# 5. Final Inventory Update
 # ------------------------------------------------------------------
-- name: Ensure group section [{{ group_name }}] exists in inventory
-  ansible.builtin.blockinfile:
-    path: "{{ inventory_file | default('/home/ansible/inventory.ini') }}"
-    block: |
-      [{{ group_name }}]
-    marker: "# {mark} ANSIBLE MANAGED {{ group_name }}"
-    insertafter: EOF
+- name: Ensure group header exists
+  lineinfile:
+    path: "{{ inventory_file }}"
+    line: "[{{ group_name }}]"
     create: yes
-  delegate_to: localhost
+    insertafter: EOF
 
-- name: Add VM host to the dynamic group [{{ group_name }}]
-  ansible.builtin.lineinfile:
-    path: "{{ inventory_file | default('/home/ansible/inventory.ini') }}"
+- name: Add host to inventory file
+  lineinfile:
+    path: "{{ inventory_file }}"
     insertafter: "\\[{{ group_name }}\\]"
-    # Host entry uses the vm_name as the host entry key, and sets dynamic connection vars.
-    line: "{{ vm_name }} ansible_host={{ external_ip }} ansible_port={{ ssh_port }} ansible_user={{vm_base}} ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'"
-  delegate_to: localhost
-  
-- name: Add host details to in-memory inventory
+    line: "{{ internal_ip }} ansible_user={{ target_user }} ansible_ssh_pass={{ vm_base }}"
+
+- name: Add to current in-memory inventory
   add_host:
     name: "{{ vm_name }}"
     groups: "{{ group_name }}"
-    ansible_host: "{{ external_ip }}"
-    ansible_port: "{{ ssh_port }}"
-    ansible_user: ansible
-    ansible_ssh_private_key_file: "~/.ssh/id_rsa"
-  
-- name: Success
-  debug:
-    msg: "VM '{{ vm_name }}' (Group: {{ group_name }}) is READY at {{ external_ip }}:{{ ssh_port }}"
+    ansible_host: "{{ internal_ip }}"
+    ansible_user: "{{ target_user }}"

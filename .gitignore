@@ -1,5 +1,4 @@
 vault_password.sh
 .venv/
-ansible.cfg
 inventory.ini
 tmp/

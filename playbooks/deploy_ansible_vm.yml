@@ -1,5 +1,4 @@
----
-- name: Deploy Ansible VM (no one_vm_info)
+- name: Deploy Ansible VM
   hosts: localhost
   become: false
   gather_facts: false
@@ -16,6 +15,14 @@
 
   tasks:
     # ------------------------------------------------------------------
+    # 0. PREP: Read Local Public Key
+    # ------------------------------------------------------------------
+    - name: Read local public SSH key
+      set_fact:
+        # Read the key file from your laptop
+        local_ssh_pub_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+    # ------------------------------------------------------------------
     # 1. Load credentials
     # ------------------------------------------------------------------
     - name: Load vault
@@ -30,7 +37,7 @@
         vm_password: "{{ creds.opennebula_accounts[vm_base].password }}"
 
     # ------------------------------------------------------------------
-    # 2. Create VM
+    # 2. Create VM (With Legacy Contextualization)
     # ------------------------------------------------------------------
     - name: Create VM
       community.general.one_vm:
@@ -46,7 +53,6 @@
         disk_size: 4 GB
         attributes:
           NAME: "{{ vm_name }}"
-          SSH_PUBLIC_KEY: "{{ lookup('file', '~/.ssh/id_rsa.pub') | trim }}"
       register: vm_create
       retries: 3
       delay: 10
@@ -62,7 +68,7 @@
         vm_id: "{{ vm_create.instances[0].vm_id }}"
 
     # ------------------------------------------------------------------
-    # 3. Poll VM until RUNNING + public access ready
+    # 3. Poll VM until RUNNING
     # ------------------------------------------------------------------
     - name: Wait for VM to be RUNNING and have SSH port
       community.general.one_vm:
@@ -82,13 +88,13 @@
       retries: "{{ (max_wait_seconds / 10) | int }}"
       delay: 10
 
+
     # ------------------------------------------------------------------
     # 4. Extract public access
     # ------------------------------------------------------------------
-    - name: Extract internal and external IP, and SSH port
+    - name: Extract IP and Port
       set_fact:
         external_ip: "{{ vm_poll.instances[0].attributes.PUBLIC_IP }}"
-        internal_ip: "{{ vm_poll.instances[0].networks[0].ip }}"
         ssh_port: >-
           {{
             (
@@ -102,54 +108,10 @@
             | int
           }}
 
-    - name: Debug public access
-      debug:
-        msg: "SSH: {{ external_ip }}:{{ ssh_port }} (ID: {{ vm_id }})"
-
     # ------------------------------------------------------------------
-    # 5. Save to JSON
+    # 5. Wait for SSH
     # ------------------------------------------------------------------
-    - name: Build VM record
-      set_fact:
-        vm_details:
-          id: "{{ vm_id }}"
-          name: "{{ vm_poll.instances[0].vm_name }}"
-          internal_ip: "{{ internal_ip }}"
-          public_ip: "{{ external_ip }}"
-          ssh_port: "{{ ssh_port }}"
-          base: "{{ vm_base }}"
-          user: "{{ vm_user }}"
-
-    - name: Save to JSON
-      shell: |
-        FILE="tmp/opennebula_deployed_vms.json"
-        [ ! -f "$FILE" ] || ! grep -q '\[' "$FILE" && echo '[]' > "$FILE"
-        TMP=$(mktemp)
-        jq --argjson vm '{{ vm_details | to_json }}' '. += [$vm]' "$FILE" > "$TMP" && mv "$TMP" "$FILE"
-      delegate_to: localhost
-
-    # ------------------------------------------------------------------
-    # 6. Wait for SSH to be actually reachable
-    # ------------------------------------------------------------------
-
-    - name: Ensure SSH key exists + read public key
-      delegate_to: localhost
-      block:
-        - name: Generate key pair (only once)
-          command: ssh-keygen -t rsa -f ~/.ssh/id_rsa -N "" -q
-          args:
-            creates: ~/.ssh/id_rsa
-
-        - name: Read public key into fact
-          slurp:
-            src: ~/.ssh/id_rsa.pub
-          register: ssh_pub_key
-
-        - name: Set final SSH public key fact (clean string)
-          set_fact:
-            final_ssh_key: "{{ ssh_pub_key.content | b64decode | trim }}"
-
-    - name: Wait for SSH port to be open (max 3 minutes)
+    - name: Wait for SSH port to be open
       ansible.builtin.wait_for:
         host: "{{ external_ip }}"
         port: "{{ ssh_port }}"
@@ -158,22 +120,36 @@
         delay: 10
       delegate_to: localhost
 
-    - name: Wait for SSH daemon to respond
-      ansible.builtin.wait_for_connection:
-        timeout: 180
-      delegate_to: localhost
 
     # ------------------------------------------------------------------
-    # 7. Add to inventory
+    # 6. Add to inventory
     # ------------------------------------------------------------------
+
+    - name: Add host for initial password connection
+      add_host:
+        name: target_vm_temp
+        ansible_host: "{{ external_ip }}"
+        ansible_port: "{{ ssh_port }}"
+        ansible_user: ansible
+        ansible_ssh_pass: "ansible" 
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
+    - name: Push SSH Key to VM
+      ansible.builtin.authorized_key:
+        user: ansible
+        state: present
+        key: "{{ local_ssh_pub_key }}"
+      delegate_to: target_vm_temp
+
     - name: Add to in-memory inventory
       add_host:
         name: ansible_vm
         ansible_host: "{{ external_ip }}"
         ansible_port: "{{ ssh_port }}"
-        ansible_user: ansible
+        ansible_user: ansible 
         ansible_ssh_private_key_file: "~/.ssh/id_rsa"
-        ansible_become_pass: "{{ ansible_become_pass }}"
+        ansible_become_pass: "{{ ansible_sudo_pass }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 
     - name: Write inventory file
       copy:
@@ -182,7 +158,3 @@
           [ansible]
           {{ external_ip }} ansible_port={{ ssh_port }} ansible_user=ansible ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
         mode: '0644'
-
-    - name: Success
-      debug:
-        msg: "Ansible VM READY at {{ external_ip }}:{{ ssh_port }}"

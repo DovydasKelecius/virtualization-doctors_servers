@@ -8,14 +8,13 @@
     ansible_become_pass: "{{ ansible_sudo_pass }}"
 
   tasks:
-    # ───────────────────── PHASE 1: RAW BOOTSTRAP ─────────────────────
     - name: SSH Connectivity Check
       ansible.builtin.wait_for_connection:
         timeout: 180
       delegate_to: localhost
       become: false
 
-    - name: 1. Grant sudo + create sources.list
+    - name: Grant sudo + create sources.list
       raw: >-
         echo "ansible ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/ansible >/dev/null &&
         sudo mkdir -p /etc/apt/sources.list.d &&
@@ -24,7 +23,7 @@
         echo "deb http://security.ubuntu.com/ubuntu noble-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list >/dev/null
       changed_when: false
 
-    - name: 2. NUCLEAR APT LOCK KILLER
+    - name: Unlock APT lock
       raw: |
         sudo systemctl stop apt-daily.service apt-daily.timer apt-daily-upgrade.service apt-daily-upgrade.timer || true
         sudo killall -9 apt apt-get dpkg unattended-upgrades cloud-init || true
@@ -33,13 +32,10 @@
         sudo dpkg --configure -a || true
       changed_when: false
 
-    - name: 3. Install Python3 + openssh-server
+    - name: Install Python3 + openssh-server
       raw: sudo DEBIAN_FRONTEND=noninteractive apt update -y && sudo DEBIAN_FRONTEND=noninteractive apt install -y python3 openssh-server
       changed_when: false
 
-    # ───── NORMAL ANSIBLE FROM HERE ON ─────
-    - name: Gather facts
-      setup:
 
     - name: Full system upgrade
       apt:
@@ -52,7 +48,6 @@
       delay: 15
       until: upgrade is succeeded
 
-    # --- PHASE 3: APPLICATION SETUP ---
 
     - name: 5. Install system dependencies
       ansible.builtin.apt:
@@ -63,20 +58,17 @@
           - jq
           - sshpass
           - python3-setuptools
-          - python3-pip
-          - python3-venv
           - sudo
           - ansible-mitogen
           - python3-mitogen
         state: present
-        update_cache: no # Cache was updated in the previous task
+        update_cache: no
 
     - name: 6. Install Ansible
       ansible.builtin.apt:
         name: ansible
         state: present
 
-        # ───────────────────── 7. Create isolated Python venv in ~/.venv ─────────────────────
     - name: 7.1 Install required system packages for venv
       ansible.builtin.apt:
         name:
@@ -110,8 +102,8 @@
         executable: /home/ansible/.venv/bin/pip
       become_user: ansible
 
-    - name: 7.5 Install community.general collection
-      ansible.builtin.command: /home/ansible/.venv/bin/ansible-galaxy collection install community.general
+    - name: 7.5 Install community.general, docker, posix collection
+      ansible.builtin.command: /home/ansible/.venv/bin/ansible-galaxy collection install community.general community.docker ansible.posix
       become_user: ansible
       environment:
         PATH: /home/ansible/.venv/bin:{{ ansible_env.PATH }}
@@ -157,7 +149,7 @@
       become: true
       become_user: ansible
 
-    - name: 10. Configure Ansible to use Mitogen for performance
+    - name: 10. Configure Ansible to use Mitogen for performance and some extra features
       ansible.builtin.copy:
         dest: /home/ansible/.ansible.cfg
         content: |
@@ -165,6 +157,8 @@
           interpreter_python = auto_silent
           strategy_plugins = /home/ansible/mitogen-0.3.30/ansible_mitogen/plugins/strategy
           strategy = mitogen_linear
+          host_key_checking = False
+          auto_install_module_deps = True
 
     - name: 11. Verify Ansible installation
       ansible.builtin.command:

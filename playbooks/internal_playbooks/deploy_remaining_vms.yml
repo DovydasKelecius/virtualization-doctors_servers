@@ -3,40 +3,50 @@
   hosts: localhost
   gather_facts: false
   vars_files:
-    - ../vars_files/one_creds.yml      # encrypted with your single password
-    - ../vars_files/sudo_pass.yml      # encrypted with the same password
+    - ../vars_files/one_creds.yml
+    - ../vars_files/sudo_pass.yml
   vars:
     inventory_file: /home/ansible/inventory.ini
 
   tasks:
-    # Load the vault once – this creates the fact "opennebula_creds"
+    # ------------------------------------------------------------------
+    # 0. PREP: Generate SSH Key for the Ansible VM itself
+    # ------------------------------------------------------------------
+    - name: Ensure SSH key exists on this machine
+      command: ssh-keygen -t rsa -f /home/ansible/.ssh/id_rsa -N "" -q
+      args:
+        creates: /home/ansible/.ssh/id_rsa
+
+    # ------------------------------------------------------------------
+    # 1. Setup Inventory
+    # ------------------------------------------------------------------
     - name: Load OpenNebula credentials
       include_vars:
         file: ../vars_files/one_creds.yml
         name: opennebula_creds
       no_log: true
 
-    # ───── Initialize inventory ─────
     - name: Create clean inventory file
       copy:
         content: |
           [all:vars]
-          ansible_user=ansible
           ansible_ssh_private_key_file=/home/ansible/.ssh/id_rsa
-          ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-
+          ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
         dest: "{{ inventory_file }}"
         force: yes
+        mode: '0644'
 
-    # ───── Deploy the three VMs ─────
-    # - name: Deploy DB VM
-    #   include_tasks: deploy_one_vm.yml
-    #   vars:
-    #     creds: "{{ opennebula_creds }}"           # ← PASS THE VAULT
-    #     vm_base: db
-    #     vm_name: rtfm_db
-    #     template_id: 2975              # ← CHANGE TO YOUR REAL DB TEMPLATE ID
-    #     group_name: db
+    # ------------------------------------------------------------------
+    # 2. Deploy the three VMs
+    # ------------------------------------------------------------------
+    - name: Deploy DB VM
+      include_tasks: deploy_one_vm.yml
+      vars:
+        creds: "{{ opennebula_creds }}"
+        vm_base: db
+        vm_name: rtfm_db
+        template_id: 3019
+        group_name: db
 
     - name: Deploy Webserver VM
       include_tasks: deploy_one_vm.yml
@@ -53,11 +63,15 @@
         creds: "{{ opennebula_creds }}"          
         vm_base: client
         vm_name: rtfm_client
-        template_id: 3015             
+        template_id: 3024          
         group_name: client
 
+    # ------------------------------------------------------------------
+    # 3. Final Report
+    # ------------------------------------------------------------------
     - name: Show final inventory
       command: cat "{{ inventory_file }}"
       register: result
+    
     - debug:
         msg: "{{ result.stdout_lines }}"
