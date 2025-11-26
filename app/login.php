@@ -14,7 +14,6 @@ if (isset($_SESSION['patient_id'])) {
 }
 ?>
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="lt">
 <head>
   <meta charset="UTF-8">
