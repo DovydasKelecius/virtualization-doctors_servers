@@ -175,7 +175,7 @@ if ($doctor['work_start'] && $doctor['work_end']) {
 
         <hr style="margin: 20px 0;">
 
-        <a href="doctor_list.php" class="btn">Grįžti į Gydytojų Sąrašą</a>
+        <a href="doctor_registration.php" class="btn">Grįžti į Registraciją pas Daktarą</a>
     </div>
 </body>
 </html>

@@ -9,11 +9,11 @@ RUN apt update \
 RUN rm -rf /etc/nginx/sites-enabled/default
 
 # Copy custom Nginx configuration file (defined in Step 3)
-COPY ./conf/nginx.conf /etc/nginx/conf.d/default.conf
+COPY Web/conf/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy the static HTML/PHP content into the directory Nginx will serve
 # The destination must match the 'root' directive in nginx.conf
-COPY ./app/* /var/www/html/
+COPY Web/ /var/www/html/
 
 # Expose port 80 to the outside world
 EXPOSE 80
