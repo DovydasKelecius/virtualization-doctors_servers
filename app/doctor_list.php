@@ -10,60 +10,69 @@ require 'db.php';
 $specialization = $_GET['specialization'] ?? '';
 $q = trim($_GET['q'] ?? '');
 
-// If a search query is provided, search first_name, last_name, and specialization (case-insensitive)
-if ($q !== '') {
-    $like = "%" . $q . "%";
-    $stmt = $pdo->prepare("SELECT * FROM doctors WHERE first_name ILIKE ? OR last_name ILIKE ? OR specialization ILIKE ? ORDER BY last_name, first_name");
-    $stmt->execute([$like, $like, $like]);
-} elseif (!empty($specialization)) {
-    $stmt = $pdo->prepare("SELECT * FROM doctors WHERE specialization = ? ORDER BY last_name, first_name");
-    $stmt->execute([$specialization]);
-} else {
-    $stmt = $pdo->query("SELECT * FROM doctors ORDER BY last_name, first_name");
-}
-$doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Base query
+$sql = "SELECT * FROM doctors";
+$params = [];
 
-// Get patient info for header
-$pstmt = $pdo->prepare("SELECT first_name, last_name FROM patients WHERE id = ?");
-$pstmt->execute([$_SESSION['patient_id']]);
-$patient = $pstmt->fetch(PDO::FETCH_ASSOC);
+// If a search query is provided, search first_name, last_name, and specialization
+if ($q !== '') {
+    $sql .= " WHERE first_name ILIKE ? OR last_name ILIKE ? OR specialization ILIKE ?";
+    $like = "%" . $q . "%";
+    $params = [$like, $like, $like];
+} elseif (!empty($specialization)) {
+    $sql .= " WHERE specialization = ?";
+    $params = [$specialization];
+}
+
+$sql .= " ORDER BY last_name, first_name";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
+$doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="lt">
 <head>
-<meta charset="UTF-8">
-<title>Gydytojai – <?= htmlspecialchars($specialization) ?></title>
-<link rel="stylesheet" href="/static/styles.css">
+    <meta charset="UTF-8">
+    <title>Gydytojų Sąrašas</title>
+    <link rel="stylesheet" href="static/styles.css">
 </head>
 <body>
-  <div class="top" onclick="window.location.href='patient_home.php'">HOSPITAL</div>
+    <div class="container">
+        <h1 onclick="window.location.href='index.php'">HOSPITAL</h1>
+        <h2>Gydytojų sąrašas</h2>
 
-  <h3>Pacientas: <?= htmlspecialchars($patient['first_name'].' '.$patient['last_name']) ?></h3>
-  <h2><?= htmlspecialchars($specialization) ?> – Gydytojai</h2>
+        <?php if (!empty($specialization)): ?>
+            <h3>Specializacija: <?= htmlspecialchars($specialization) ?></h3>
+        <?php endif; ?>
+        <?php if (!empty($q)): ?>
+            <h3>Paieškos frazė: "<?= htmlspecialchars($q) ?>"</h3>
+        <?php endif; ?>
 
-  <?php if (empty($doctors)): ?>
-      <p>Šiuo metu nėra gydytojų šioje specializacijoje.</p>
-  <?php else: ?>
-      <table>
-    <tr>
-        <th>Vardas, pavardė</th>
-        <th>Daktaro specialybė</th>
-        <th>Darbo laikas</th>
-        <th>Veiksmas</th>
-    </tr>
-    <?php foreach ($doctors as $d): ?>
-    <tr>
-    <td><?= htmlspecialchars(($d['first_name'] ?? '') . ' ' . ($d['last_name'] ?? '')) ?></td>
-    <td><?= htmlspecialchars($d['specialization'] ?? '') ?></td>
-    <td><?= htmlspecialchars((isset($d['work_start']) ? substr($d['work_start'],0,5) : '') . ' - ' . (isset($d['work_end']) ? substr($d['work_end'],0,5) : '')) ?></td>
-        <td>
-            <a href="doctor_details.php?doctor_id=<?= htmlspecialchars($d['id']) ?>" class="btn">Registruotis</a>
-        </td>
-    </tr>
-    <?php endforeach; ?>
-</table>
+        <?php if (empty($doctors)): ?>
+            <p>Pagal jūsų kriterijus gydytojų nerasta.</p>
+        <?php else: ?>
+            <table>
+                <tr>
+                    <th>Vardas, pavardė</th>
+                    <th>Specialybė</th>
+                    <th>Darbo laikas</th>
+                    <th>Veiksmas</th>
+                </tr>
+                <?php foreach ($doctors as $d): ?>
+                <tr>
+                    <td><?= htmlspecialchars(($d['first_name'] ?? '') . ' ' . ($d['last_name'] ?? '')) ?></td>
+                    <td><?= htmlspecialchars($d['specialization'] ?? '') ?></td>
+                    <td><?= htmlspecialchars((isset($d['work_start']) ? substr($d['work_start'],0,5) : '') . ' - ' . (isset($d['work_end']) ? substr($d['work_end'],0,5) : '')) ?></td>
+                    <td>
+                        <a href="doctor_details.php?doctor_id=<?= htmlspecialchars($d['id']) ?>" class="btn">Registruotis</a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </table>
+        <?php endif; ?>
 
-  <?php endif; ?>
-
-      <a href="doctor_registration.php" class="btn btn-secondary">Grįžti atgal</a></body>
+        <a href="doctor_registration.php" class="btn" style="margin-top: 20px;">Grįžti atgal</a>
+    </div>
+</body>
 </html>

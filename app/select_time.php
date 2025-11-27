@@ -8,7 +8,6 @@ if (!isset($_SESSION["patient_id"])) {
 }
 
 if (!isset($_GET["doctor_id"]) || !isset($_GET["date"])) {
-    // Better to redirect back than die if data is missing
     header("Location: patient_home.php");
     exit();
 }
@@ -34,7 +33,7 @@ $bookedStmt = $pdo->prepare("
 $bookedStmt->execute([$doctor_id, $date]);
 $booked_times = $bookedStmt->fetchAll(PDO::FETCH_COLUMN);
 
-// Generate 30-minute slots
+// Generate available 30-minute slots
 $time_slots = [];
 $startTime = new DateTime($doctor["work_start"]);
 $endTime = new DateTime($doctor["work_end"]);
@@ -52,40 +51,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $time = $_POST["time"] ?? "";
     $comment = $_POST["comment"] ?? "";
     $patient_id = $_SESSION["patient_id"];
-    $specialization = $doctor["specialization"];
     $datetime = $date . " " . $time;
 
-    // Double-check availability (prevents race conditions)
-    $checkStmt = $pdo->prepare("
-        SELECT COUNT(*) FROM appointments
-        WHERE doctor_id = ? AND appointment_date = ?
-    ");
+    // Double-check availability to prevent booking an already taken slot
+    $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_date = ?");
     $checkStmt->execute([$doctor_id, $datetime]);
     if ($checkStmt->fetchColumn() > 0) {
-        // Use session error message for cleaner display
-        $_SESSION["error"] = "❌ Šis laikas jau užimtas. Bandykite kitą laiką.";
-        // Redirect back to this page to show error
-        header("Location: book_time.php?doctor_id={$doctor_id}&date={$date}");
+        $_SESSION["error"] = "Atsiprašome, šis laikas jau buvo užimtas. Pasirinkite kitą laiką.";
+        // BUG FIX: Redirect back to the correct page
+        header("Location: select_time.php?doctor_id={$doctor_id}&date={$date}");
         exit();
     }
 
     // Insert appointment
-    $stmt = $pdo->prepare("
-        INSERT INTO appointments (patient_id, doctor_id, appointment_date, comment)
-        VALUES (?, ?, ?, ?)
-    ");
-    $stmt->execute([
-        $patient_id,
-        $doctor_id,
-        $datetime,
-        $comment,
-    ]);
+    $stmt = $pdo->prepare(
+        "INSERT INTO appointments (patient_id, doctor_id, appointment_date, comment) VALUES (?, ?, ?, ?)"
+    );
+    $stmt->execute([$patient_id, $doctor_id, $datetime, $comment]);
 
+    // Store confirmation details in session to show on the next page
     $_SESSION["appointment_success"] = [
         "doctor" => $doctor["first_name"] . " " . $doctor["last_name"],
         "specialization" => $doctor["specialization"],
         "datetime" => $datetime,
-        "comment" => $comment,
     ];
 
     header("Location: appointment_confirm.php");
@@ -95,50 +83,49 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <!DOCTYPE html>
 <html lang="lt">
 <head>
-<meta charset="UTF-8">
-<title>Pasirinkite laiką</title>
-<link rel="stylesheet" href="/static/styles.css">
+    <meta charset="UTF-8">
+    <title>Pasirinkite laiką</title>
+    <link rel="stylesheet" href="static/styles.css">
 </head>
 <body>
+    <div class="container">
+        <h1 onclick="window.location.href='index.php'">HOSPITAL</h1>
 
-<div class="top" onclick="window.location.href='patient_home.php'">HOSPITAL</div>
+        <?php 
+        if (isset($_SESSION['error'])) {
+            echo '<p style="color: red; font-weight: bold;">' . htmlspecialchars($_SESSION['error']) . '</p>';
+            unset($_SESSION['error']);
+        }
+        ?>
 
-<?php if (isset($_SESSION["error"])): ?>
-    <div style="color: red; margin: 0 auto 20px auto; max-width: 300px; padding: 10px; background: #fff0f0; border: 1px solid red; border-radius: 5px;">
-        <?= htmlspecialchars($_SESSION["error"]) ?>
-        <?php unset($_SESSION["error"]); ?>
+        <h2>Pasirinkite laiką vizitui</h2>
+        <p>Gydytojas: <strong>Dr. <?= htmlspecialchars($doctor["first_name"] . " " . $doctor["last_name"]) ?></strong></p>
+        <p>Data: <strong><?= htmlspecialchars($date) ?></strong></p>
+        
+        <hr style="margin: 20px 0;">
+        
+        <?php if (empty($time_slots)): ?>
+            <p>Atsiprašome, šiai dienai laisvų laikų nebėra.</p>
+        <?php else: ?>
+            <form method="POST">
+                <h3>Laisvi laikai:</h3>
+                <div class="time-grid">
+                    <?php foreach ($time_slots as $t): ?>
+                        <div>
+                            <input type="radio" id="time_<?= $t ?>" name="time" value="<?= $t ?>" required>
+                            <label for="time_<?= $t ?>" class="time-btn"><?= $t ?></label>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <label for="comment" style="display: block; margin-top: 20px;">Komentarai (pasirinktinai):</label>
+                <textarea name="comment" id="comment" placeholder="Trumpai aprašykite vizito priežastį..."></textarea>
+
+                <button type="submit">Patvirtinti vizitą</button>
+            </form>
+        <?php endif; ?>
+
+        <a href="javascript:history.back()" class="btn" style="margin-top: 20px;">Grįžti atgal</a>
     </div>
-<?php endif; ?>
-
-<div class="doctor-info">
-    <h2>Dr. <?= htmlspecialchars(
-        $doctor["first_name"] . " " . $doctor["last_name"],
-    ) ?></h2>
-    <p><strong>Specializacija:</strong> <?= htmlspecialchars(
-        $doctor["specialization"],
-    ) ?></p>
-    <p><strong>Pasirinkta data:</strong> <?= htmlspecialchars($date) ?></p>
-</div>
-
-<h3>Pasirinkite laiką</h3>
-
-<form method="POST">
-    <div class="time-grid">
-        <?php foreach ($time_slots as $t): ?>
-            <div class="time-option">
-                <input type="radio" id="time_<?= $t ?>" name="time" value="<?= $t ?>" required>
-                <label for="time_<?= $t ?>" class="time-btn"><?= $t ?></label>
-            </div>
-        <?php endforeach; ?>
-    </div>
-
-    <label for="comment">Komentarai (pasirinktinai):</label>
-    <textarea name="comment" id="comment" placeholder="Trumpai aprašykite savo problemą..."></textarea>
-
-    <button type="submit">Patvirtinti vizitą</button>
-</form>
-
-<a href="javascript:history.back()" class="btn btn-secondary">Grįžti atgal</a>
-
 </body>
 </html>

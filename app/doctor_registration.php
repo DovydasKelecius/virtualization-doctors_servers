@@ -14,7 +14,7 @@ $stmt = $pdo->prepare(
 $stmt->execute([$id]);
 $patient = $stmt->fetch();
 
-// Load distinct specializations from the DB (no duplicates)
+// Load distinct specializations
 $specStmt = $pdo->query(
     "SELECT DISTINCT specialization FROM doctors ORDER BY specialization",
 );
@@ -26,31 +26,32 @@ $specializations = $specStmt->fetchAll(PDO::FETCH_COLUMN);
 <head>
     <meta charset="UTF-8">
     <title>Registracija pas daktarą</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="static/styles.css">
 </head>
 <body>
-    <div class="top" onclick="window.location.href='patient_home.php'">HOSPITAL</div>
-
-    <h2>Pacientas: <?= htmlspecialchars(
-        $patient["first_name"],
-    ) ?> <?= htmlspecialchars($patient["last_name"]) ?></h2>
-
-    <div class="top-right-search">
-        <form action="doctor_list.php" method="GET" class="search-input-group">
-            <input type="text" name="q" placeholder="Ieškoti gydytojo arba specializacijos" />
-            <button type="submit" class="btn">Ieškoti</button>
-        </form>
-    </div>
-
     <div class="container">
-        <h3>Pasirinkite gydytojo specializaciją:</h3>
-        <?php foreach ($specializations as $spec): ?>
-            <a class="specialization" href="doctor_list.php?specialization=<?= urlencode(
-                $spec,
-            ) ?>"><?= htmlspecialchars($spec) ?></a>
-        <?php endforeach; ?>
-    <a href="patient_home.php" class="btn btn-secondary">Grįžti atgal</a>
-    </div>
+        <h1 onclick="window.location.href='index.php'">HOSPITAL</h1>
+        <h2>Registracija pas daktarą</h2>
+        <p>Pacientas: <?= htmlspecialchars($patient["first_name"]) ?> <?= htmlspecialchars($patient["last_name"]) ?></p>
+        
+        <hr style="margin: 20px 0;">
 
+        <form action="doctor_list.php" method="GET">
+            <label for="q"><strong>Ieškoti gydytojo arba specializacijos:</strong></label>
+            <input type="text" id="q" name="q" placeholder="Įveskite vardą, pavardę arba specializaciją..." />
+            <button type="submit">Ieškoti</button>
+        </form>
+        
+        <hr style="margin: 20px 0;">
+
+        <h3>Arba pasirinkite specializaciją iš sąrašo:</h3>
+        <?php foreach ($specializations as $spec): ?>
+            <a class="btn" href="doctor_list.php?specialization=<?= urlencode($spec) ?>"><?= htmlspecialchars($spec) ?></a>
+        <?php endforeach; ?>
+        
+        <hr style="margin: 20px 0;">
+
+        <a href="patient_home.php" class="btn">Grįžti atgal</a>
+    </div>
 </body>
 </html>

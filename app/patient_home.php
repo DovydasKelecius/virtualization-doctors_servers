@@ -25,27 +25,27 @@ try {
         exit();
     }
 } catch (PDOException $e) {
-    die("Database connection error.");
+    // For simplicity in a school project, we can show a generic error.
+    // In a real-world scenario, you would log this error.
+    die("Klaida jungiantis prie duomenų bazės.");
 }
 ?>
 <!DOCTYPE html>
 <html lang="lt">
 <head>
-  <meta charset="UTF-8">
-  <title>Pacientas - Pagrindinis</title>
-  <link rel="stylesheet" href="/static/styles.css">
+    <meta charset="UTF-8">
+    <title>Paciento Pagrindinis Puslapis</title>
+    <link rel="stylesheet" href="static/styles.css">
 </head>
 <body>
-  <h1>HOSPITAL</h1>
-  <div class="info">Sveiki, <?= htmlspecialchars(
-      $patient["first_name"],
-  ) ?></div>
+    <div class="container">
+        <h1 onclick="window.location.href='index.php'">HOSPITAL</h1>
+        <p>Sveiki, <?= htmlspecialchars($patient["first_name"]) ?>!</p>
 
-  <div class="button-group">
-    <a href="patient_card.php" class="btn btn-primary">Paciento kortelė</a>
-    <a href="doctor_registration.php" class="btn btn-primary">Registracija pas daktarą</a>
-    <a href="my_appointments.php" class="btn btn-secondary">Mano vizitai</a>
-    <a href="logout.php" class="btn btn-danger">Atsijungti</a>
-  </div>
+        <a href="patient_card.php" class="btn">Paciento kortelė</a>
+        <a href="doctor_registration.php" class="btn">Registracija pas daktarą</a>
+        <a href="my_appointments.php" class="btn">Mano vizitai</a>
+        <a href="logout.php" class="btn btn-danger">Atsijungti</a>
+    </div>
 </body>
 </html>

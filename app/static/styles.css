@@ -1,35 +1,18 @@
-/* === Global Styles === */
-:root {
-    --primary-color: #007bff;
-    --primary-hover: #0056b3;
-    --secondary-color: #6c757d;
-    --secondary-hover: #5a6268;
-    --success-color: #28a745;
-    --danger-color: #dc3545;
-    --light-bg: #f8f9fa;
-    --white-bg: #ffffff;
-    --text-color: #343a40;
-    --border-color: #dee2e6;
-    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    --border-radius: 8px;
-}
-
+/* Simplified Global Styles */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background-color: var(--white-bg);
-    color: var(--text-color);
+    font-family: sans-serif;
+    background-color: #f8f9fa;
+    color: #343a40;
     text-align: center;
-    margin: 0;
-    padding: 20px;
+    margin: 20px;
 }
 
 h1, h2, h3 {
-    color: var(--text-color);
-    cursor: pointer;
+    color: #343a40;
 }
 
 a {
-    color: var(--primary-color);
+    color: #007bff;
     text-decoration: none;
 }
 
@@ -37,44 +20,29 @@ a:hover {
     text-decoration: underline;
 }
 
-.top-right-search {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    max-width: 350px; /* Slightly wider for the search input */
-}
-
-/* === Layout & Containers === */
-.container, .card, .form-container, .table-container, .box, .content-container {
-    border: 1px solid var(--border-color);
-    padding: 30px;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
+/* Simplified Container */
+.container {
+    border: 1px solid #dee2e6;
+    padding: 20px;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     margin: 20px auto;
     text-align: left;
-    max-width: 90%;
+    max-width: 800px;
 }
 
-.container { max-width: 400px; }
-.content-container { max-width: 700px; }
-.table-container { max-width: 800px; }
-
-/* === Forms & Input Alignment === */
+/* Simplified Forms */
 form {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-}
-
-.form-group, .input-item {
-    display: flex;
-    flex-direction: column;
-    text-align: left;
-    gap: 8px;
+    gap: 15px;
 }
 
 label {
     font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
 }
 
 input[type="text"],
@@ -85,189 +53,39 @@ input[type="date"],
 select,
 textarea {
     width: 100%;
-    padding: 12px;
-    border: 1px solid var(--border-color);
+    padding: 10px;
+    border: 1px solid #dee2e6;
     border-radius: 5px;
     box-sizing: border-box;
-    font-size: 16px;
 }
 
-input:focus, select:focus, textarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
-}
-
-.input-group {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 20px;
-    align-items: flex-start;
-}
-
-.input-group .input-item {
-    flex: 1;
-    min-width: calc(50% - 10px);
-}
-
-.search-input-group {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.search-input-group input[type="text"] {
-    flex-grow: 1;
-}
-
-/* === Simplified Buttons === */
-.btn, button, button[type="submit"], a.specialization {
-    display: block; /* Stack vertically */
-    max-width: 400px; /* Prevent buttons from being too wide */
-    margin: 15px auto; /* Center horizontally and add vertical space */
-    padding: 12px 30px;
+/* Simplified Buttons */
+.btn, button, input[type="submit"] {
+    padding: 10px 20px;
     border: none;
     border-radius: 5px;
     color: white;
-    background-color: var(--primary-color);
+    background-color: #007bff;
     cursor: pointer;
     font-size: 16px;
-    font-weight: bold;
     text-align: center;
     text-decoration: none;
-    box-sizing: border-box;
-    transition: background-color 0.2s;
+    display: inline-block;
+    margin: 5px 0;
 }
 
-.btn:hover, button:hover, button[type="submit"]:hover, a.specialization:hover {
-    background-color: var(--primary-hover);
-    color: white;
-    text-decoration: none;
-}
-
-/* Override for buttons inside search group */
-.search-input-group .btn, .search-input-group button {
-    width: auto; /* Override block-level width */
-    margin: 0; /* Override auto margins */
-    display: inline-block; /* Ensure it's not block */
-    max-width: none; /* Remove max-width constraint */
-}
-
-.btn-secondary {
-    background-color: var(--secondary-color);
-}
-.btn-secondary:hover {
-    background-color: var(--secondary-hover);
+.btn:hover, button:hover, input[type="submit"]:hover {
+    background-color: #0056b3;
 }
 
 .btn-danger {
-    background-color: var(--danger-color);
+    background-color: #dc3545;
 }
 .btn-danger:hover {
     background-color: #c82333;
 }
 
-.btn-success, .green-btn {
-    background-color: var(--success-color);
-}
-.btn-success:hover, .green-btn:hover {
-    background-color: #218838;
-}
-
-/* New style for link-like danger button */
-.btn-link-danger {
-    background: none;
-    border: none;
-    color: var(--danger-color);
-    text-decoration: underline;
-    cursor: pointer;
-    padding: 0;
-    margin: 0;
-    font-weight: bold;
-}
-.btn-link-danger:hover {
-    color: #c82333;
-}
-
-
-/* === Time Slot Grid === */
-.time-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-    margin: 20px 0;
-}
-
-.time-grid .time-option {
-    /* container for radio and label */
-}
-
-.time-grid input[type="radio"] {
-    display: none; /* Hide the actual radio button */
-}
-
-.time-grid .time-btn {
-    display: block;
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 5px;
-    text-align: center;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s;
-}
-
-.time-grid input[type="radio"]:checked + .time-btn {
-    background-color: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-}
-
-/* === Calendar Day Buttons === */
-.calendar {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 15px;
-    margin: 20px auto;
-    max-width: 800px; /* Match table-container width */
-}
-
-.calendar a {
-    text-decoration: none;
-}
-
-.day {
-    padding: 15px;
-    border-radius: var(--border-radius);
-    text-align: center;
-    font-weight: bold;
-    transition: background-color 0.2s, transform 0.2s;
-    color: white;
-}
-
-.day small {
-    font-weight: normal;
-    font-size: 0.9em;
-}
-
-.day.available {
-    background-color: var(--primary-color);
-    cursor: pointer;
-}
-
-.day.available:hover {
-    background-color: var(--primary-hover);
-    transform: translateY(-2px);
-}
-
-.day.unavailable {
-    background-color: var(--secondary-color);
-    opacity: 0.7;
-    cursor: not-allowed;
-}
-
-
-/* === Tables === */
+/* Simplified Tables */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -275,84 +93,87 @@ table {
 }
 
 th, td {
-    border: 1px solid var(--border-color);
-    padding: 12px;
+    border: 1px solid #dee2e6;
+    padding: 10px;
     text-align: left;
 }
 
 th {
-    background-color: var(--light-bg);
-    font-weight: bold;
+    background-color: #f2f2f2;
 }
 
-tr:nth-child(even) {
-    background-color: var(--light-bg);
+/* Time selection buttons */
+.time-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
-/* === Alerts & Modals === */
-.error {
-    color: #721c24;
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-    padding: 15px;
+.time-btn {
+    padding: 10px;
+    border: 1px solid #007bff;
+    color: #007bff;
+    background-color: #fff;
     border-radius: 5px;
-    margin-bottom: 20px;
-}
-
-.alert-fixed {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 15px 30px;
-    border-radius: 8px;
-    z-index: 1000;
-    box-shadow: var(--shadow);
-    font-weight: bold;
-}
-.alert-success {
-    color: #155724;
-    background-color: #d4edda;
-    border: 1px solid #c3e6cb;
-}
-.alert-error {
-    color: #721c24;
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-}
-
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.5);
-}
-
-.modal.show-modal {
-    display: block;
-}
-
-.modal-content {
-    background-color: var(--white-bg);
-    margin: 10% auto;
-    padding: 30px;
-    border-radius: var(--border-radius);
-    width: 90%;
-    max-width: 800px;
-    position: relative;
-}
-
-.close-button {
-    color: #aaa;
-    position: absolute;
-    top: 15px;
-    right: 25px;
-    font-size: 28px;
-    font-weight: bold;
     cursor: pointer;
+}
+
+input[type="radio"]:checked + .time-btn {
+    background-color: #007bff;
+    color: white;
+}
+
+input[type="radio"] {
+    display: none;
+}
+
+/* Simple Calendar */
+.calendar-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    table-layout: fixed; /* Ensures columns are of equal width */
+}
+.calendar-table th, .calendar-table td {
+    border: 1px solid #dee2e6;
+    padding: 5px;
+    text-align: center;
+    vertical-align: top;
+    height: 100px;
+}
+.calendar-table th {
+    height: auto;
+}
+.day-number {
+    font-size: 1.1em;
+    font-weight: bold;
+}
+.day-available a {
+    display: block;
+    background-color: #d4edda; /* Light green */
+    border-radius: 5px;
+    padding: 5px;
+    text-decoration: none;
+    color: #155724;
+    font-weight: bold;
+    margin-top: 5px;
+}
+.day-available a:hover {
+    background-color: #218838;
+    color: white;
+}
+.day-unavailable {
+    background-color: #f8f9fa; /* Light gray */
+    color: #6c757d;
+}
+.day-full {
+    background-color: #fff3cd; /* Light yellow */
+    color: #856404;
+    font-weight: bold;
+}
+.calendar-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
 }

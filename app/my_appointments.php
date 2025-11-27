@@ -17,7 +17,6 @@ $stmt->execute([$patient_id]);
 $patient = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Get appointments
-// Fetch the appointment ID (a.id) for cancellation purposes
 $appointments = $pdo->prepare(
     "SELECT
         a.id,
@@ -41,50 +40,47 @@ $list = $appointments->fetchAll(PDO::FETCH_ASSOC);
 <!DOCTYPE html>
 <html lang="lt">
 <head>
-  <meta charset="UTF-8">
-  <title>Mano vizitai</title>
-  <link rel="stylesheet" href="/static/styles.css">
+    <meta charset="UTF-8">
+    <title>Mano vizitai</title>
+    <link rel="stylesheet" href="static/styles.css">
 </head>
 <body>
-  <h1>HOSPITAL</h1>
-  <h3>Pacientas: <?= htmlspecialchars(
-      $patient["first_name"],
-  ) ?> <?= htmlspecialchars($patient["last_name"]) ?></h3>
+    <div class="container">
+        <h1 onclick="window.location.href='index.php'">HOSPITAL</h1>
+        <h3>Pacientas: <?= htmlspecialchars($patient["first_name"]) ?> <?= htmlspecialchars($patient["last_name"]) ?></h3>
 
-  <h2>Jūsų registracijos</h2>
+        <h2>Jūsų registracijos</h2>
 
-  <?php if (empty($list)): ?>
-      <p style="font-size: 1.1em;">Jūs dar nesate užsiregistravę vizitui.</p>
-  <?php else: ?>
-      <div class="table-container">
-          <table>
-              <tr>
-                  <th>Specializacija</th>
-                  <th>Gydytojas</th>
-                  <th>Data ir Laikas</th>
-                  <th>Aprašymas</th>
-                  <th>Veiksmas</th> </tr>
-              <?php foreach ($list as $a): ?>
-              <tr>
-                  <td><?= htmlspecialchars($a["specialization"]) ?></td>
-                  <td><?= htmlspecialchars(
-                      $a["doctor_first_name"] . " " . $a["doctor_last_name"],
-                  ) ?></td>
-                  <td><?= htmlspecialchars($a["appointment_date"]) ?></td>
-                  <td><?= htmlspecialchars($a["comment"]) ?></td>
-                  <td>
-                      <a href="cancel_appointment.php?id=<?= $a["id"] ?>"
-                         class="btn-link-danger"
-                         onclick="return confirm('Ar tikrai norite atšaukti šį vizitą?');">
-                          Atšaukti
-                      </a>
-                  </td>
-              </tr>
-              <?php endforeach; ?>
-          </table>
-      </div>
-  <?php endif; ?>
+        <?php if (empty($list)): ?>
+            <p>Jūs dar nesate užsiregistravę vizitui.</p>
+        <?php else: ?>
+            <table>
+                <tr>
+                    <th>Specializacija</th>
+                    <th>Gydytojas</th>
+                    <th>Data ir Laikas</th>
+                    <th>Aprašymas</th>
+                    <th>Veiksmas</th>
+                </tr>
+                <?php foreach ($list as $a): ?>
+                <tr>
+                    <td><?= htmlspecialchars($a["specialization"]) ?></td>
+                    <td><?= htmlspecialchars($a["doctor_first_name"] . " " . $a["doctor_last_name"]) ?></td>
+                    <td><?= htmlspecialchars($a["appointment_date"]) ?></td>
+                    <td><?= htmlspecialchars($a["comment"]) ?></td>
+                    <td>
+                        <a href="cancel_appointment.php?id=<?= $a["id"] ?>"
+                           class="btn btn-danger"
+                           onclick="return confirm('Ar tikrai norite atšaukti šį vizitą?');">
+                            Atšaukti
+                        </a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </table>
+        <?php endif; ?>
 
-  <a href="patient_home.php" class="btn btn-secondary">Grįžti atgal</a>
+        <a href="patient_home.php" class="btn">Grįžti atgal</a>
+    </div>
 </body>
 </html>

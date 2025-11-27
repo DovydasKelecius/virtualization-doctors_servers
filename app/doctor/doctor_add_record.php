@@ -32,42 +32,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ");
         $stmt->execute([$patient_id, $doctor_id, $appointment_id, $event, $diagnosis]);
 
-        // Use a session message for success, consistent with patient_card.php style
         $_SESSION["message"] = "Apsilankymo duomenys sėkmingai įrašyti!";
-        
         header("Location: doctor_patient_details.php?patient_id=$patient_id&appointment_id=$appointment_id");
         exit;
     } else {
-        $error = "Užpildykite visus laukus!";
+        $error = "Prašome užpildyti visus laukus!";
     }
 }
 ?>
 <!DOCTYPE html>
 <html lang="lt">
 <head>
-<meta charset="UTF-8">
-<title>Įvesti apsilankymo duomenis</title>
-<link rel="stylesheet" href="/static/styles.css">
+    <meta charset="UTF-8">
+    <title>Įvesti apsilankymo duomenis</title>
+    <link rel="stylesheet" href="../static/styles.css">
 </head>
 <body>
+    <div class="container">
+        <h1 onclick="window.location.href='../index.php'">HOSPITAL</h1>
+        <h2>Įvesti apsilankymo duomenis</h2>
+        <p>Pacientas: <strong><?= htmlspecialchars($pname['first_name'] . ' ' . $pname['last_name']) ?></strong></p>
 
-<h1 onclick="window.location.href='doctor_home.php'">HOSPITAL</h1>
-<h2>Įvesti apsilankymo duomenis (<?= htmlspecialchars($pname['first_name'] . ' ' . $pname['last_name']) ?>)</h2>
+        <?php if (!empty($error)): ?>
+            <p style="color: red; font-weight: bold;"><?= htmlspecialchars($error) ?></p>
+        <?php endif; ?>
 
-<div class="card">
-  <?php if (!empty($error)): ?>
-    <div class="error"><?= htmlspecialchars($error) ?></div>
-  <?php endif; ?>
-  <form method="POST">
-    <label for="event">Apsilankymo eiga/Įvykis:</label>
-    <textarea id="event" name="event" required></textarea>
-    
-    <label for="diagnosis">Diagnozė/Išrašas:</label>
-    <textarea id="diagnosis" name="diagnosis" required></textarea>
-    
-    <button type="submit" class="btn">Išsaugoti įrašą</button>
-  </form>
-</div>
+        <form method="POST">
+            <label for="event">Apsilankymo eiga/Įvykis:</label>
+            <textarea id="event" name="event" required rows="5"></textarea>
+            
+            <label for="diagnosis">Diagnozė/Išrašas:</label>
+            <textarea id="diagnosis" name="diagnosis" required rows="5"></textarea>
+            
+            <button type="submit">Išsaugoti įrašą</button>
+        </form>
 
-    <a href="doctor_patient_details.php?patient_id=<?= $patient_id ?>&appointment_id=<?= $appointment_id ?>" class="btn btn-secondary">Grįžti į paciento duomenis</a></body>
+        <a href="doctor_patient_details.php?patient_id=<?= $patient_id ?>&appointment_id=<?= $appointment_id ?>" class="btn" style="margin-top: 15px;">Grįžti atgal</a>
+    </div>
+</body>
 </html>

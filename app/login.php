@@ -18,19 +18,19 @@ if (isset($_SESSION['patient_id'])) {
 <head>
   <meta charset="UTF-8">
   <title>Prisijungimas - Hospital</title>
-  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="static/styles.css">
 </head>
 <body>
   <div class="container">
     <h1 onclick="window.location.href='index.php'">HOSPITAL</h1>
 
     <form action="login_process.php" method="POST">
-      <?php if (isset($_SESSION['error'])): ?>
-          <div class="error">
-              <?= htmlspecialchars($_SESSION['error']) ?>
-              <?php unset($_SESSION['error']); ?>
-          </div>
-      <?php endif; ?>
+      <?php 
+      if (isset($_SESSION['error'])) {
+          echo '<p style="color: red;">' . htmlspecialchars($_SESSION['error']) . '</p>';
+          unset($_SESSION['error']);
+      }
+      ?>
       
       <label for="personal_code">Asmens kodas:</label>
       <input type="text" id="personal_code" name="personal_code"  maxlength="11" required>
