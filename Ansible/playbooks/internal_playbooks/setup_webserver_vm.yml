@@ -12,7 +12,6 @@
     - name: "Install dependencies"
       ansible.builtin.apt:
         pkg:
-          - vim # tmp for test
           - ca-certificates
           - curl
           - gnupg

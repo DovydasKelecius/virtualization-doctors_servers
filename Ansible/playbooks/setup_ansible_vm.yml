@@ -108,7 +108,6 @@
       environment:
         PATH: /home/ansible/.venv/bin:{{ ansible_env.PATH }}
 
-    # ───────────────────── 8. Auto-activate ~/.venv on login ─────────────────────
     - name: 8.1 Add .venv auto-activation to .bashrc
       ansible.builtin.blockinfile:
         path: /home/ansible/.bashrc
@@ -279,6 +278,12 @@
       ansible.builtin.fetch:
         src: /home/ansible/public_inventory.ini
         dest: ../../Misc/
+        flat: yes
+
+    - name: Copy final private inventory.ini to local machine
+      ansible.builtin.fetch:
+        src: /home/ansible/inventory.ini
+        dest: ../../Misc/private_inventory.ini
         flat: yes
       
     - name: Remove vault password file from ansible-vm
