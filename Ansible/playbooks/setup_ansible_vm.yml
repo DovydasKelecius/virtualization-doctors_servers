@@ -3,7 +3,7 @@
   gather_facts: false
   become: true
   vars_files:
-    - ../vars_files/sudo_pass.yml
+    - ../../Misc/vars_files/sudo_pass.yml
   vars:
     ansible_become_pass: "{{ ansible_pass }}"
 
@@ -141,7 +141,7 @@
 
     - name: 9. Copy Mitogen directory from local machine to VM
       ansible.builtin.synchronize:
-        src: "../mitogen-0.3.30/" 
+        src: "../../Misc/mitogen-0.3.30/" 
         dest: "/home/ansible/mitogen-0.3.30"
         mode: push
         owner: yes
@@ -193,9 +193,9 @@
         group: ansible
         mode: '0644'
       loop:
-        - { src: ../vars_files/one_creds.yml }
-        - { src: ../vars_files/sudo_pass.yml }
-        - { src: ../vars_files/hospital_20251108_185700.sql }
+        - { src: ../../Misc/vars_files/one_creds.yml }
+        - { src: ../../Misc/vars_files/sudo_pass.yml }
+        - { src: ../../Misc/vars_files/hospital_20251108_185700.sql }
       loop_control:
         label: "{{ item.src | basename }}"
 
@@ -233,7 +233,7 @@
       
     - name: Copy your local vault_password.sh into the VM
       ansible.builtin.copy:
-        src: ../vault_password.sh
+        src: ../../Misc/vault_password.sh
         dest: /home/ansible/playbooks/vault_password.sh
         owner: ansible
         group: ansible

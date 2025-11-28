@@ -4,8 +4,8 @@ set -euo pipefail
 VENV_DIR=".venv"
 MASTER_PLAYBOOK="playbooks/deploy_ansible_vm.yml"
 SETUP_PLAYBOOK="playbooks/setup_ansible_vm.yml"
-INVENTORY_FILE="inventory.ini"
-VAULT_PASS_SCRIPT="./vault_password.sh"
+INVENTORY_FILE="../Misc/inventory.ini"
+VAULT_PASS_SCRIPT="../Misc/vault_password.sh"
 
 # Cleanup on exit
 trap '[[ -n "${VENV_ACTIVATED:-}" ]] && deactivate 2>/dev/null || true' EXIT

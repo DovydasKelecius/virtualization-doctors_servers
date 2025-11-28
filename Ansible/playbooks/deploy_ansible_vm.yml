@@ -3,8 +3,8 @@
   become: false
   gather_facts: false
   vars_files:
-    - ../vars_files/one_creds.yml
-    - ../vars_files/sudo_pass.yml
+    - ../../Misc/vars_files/one_creds.yml
+    - ../../Misc/vars_files/sudo_pass.yml
   vars:
     ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
     ansible_become_pass: "{{ ansible_pass }}"
@@ -27,7 +27,7 @@
     # ------------------------------------------------------------------
     - name: Load vault
       include_vars:
-        file: ../vars_files/one_creds.yml
+        file: ../../Misc/vars_files/one_creds.yml
         name: creds
       no_log: true
 
@@ -148,12 +148,12 @@
         ansible_port: "{{ ssh_port }}"
         ansible_user: ansible 
         ansible_ssh_private_key_file: "~/.ssh/id_rsa"
-        ansible_become_pass: "{{ ansible_sudo_pass }}"
+        ansible_become_pass: "{{ ansible_pass }}"
         ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 
     - name: Write inventory file
       copy:
-        dest: ../inventory.ini
+        dest: ../../Misc/inventory.ini
         content: |
           [ansible]
           {{ external_ip }} ansible_port={{ ssh_port }} ansible_user=ansible ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'

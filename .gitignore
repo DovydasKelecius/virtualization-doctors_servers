@@ -2,3 +2,4 @@ vault_password.sh
 .venv/
 inventory.ini
 tmp/
+GEMINI.md
