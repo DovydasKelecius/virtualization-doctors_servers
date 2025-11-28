@@ -178,6 +178,7 @@
             # Use current RDP/X display (xrdp is usually :10.0)
             export DISPLAY="${DISPLAY:-{{ display_default }}}"
             echo "DISPLAY=$DISPLAY"
+            URL="{{ 'http://' + groups['webserver'][0] + ':8000' }}"
 
             # Build a FamilyWild xauth for this DISPLAY
             DOCKER_XAUTH="/tmp/docker.${USER}.$(echo "$DISPLAY" | tr -c '0-9' _).xauth"
@@ -226,7 +227,7 @@
                 --no-service-autorun \
                 --window-size=1280,800 \
                 --test-type \
-                about:blank
+                $URL
           } >>"$LOG" 2>&1
 
     - name: "Allow user lingering (lets user services survive logouts)"
