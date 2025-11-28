@@ -1,18 +1,8 @@
 <?php
 session_start();
-
-// If a doctor is already logged in, redirect to the doctor's home page
-if (isset($_SESSION['doctor_id'])) {
-    header("Location: doctor_home.php");
-    exit;
-}
-
-// If a patient is logged in, redirect to the patient's home page
-if (isset($_SESSION['patient_id'])) {
-    header("Location: ../patient_home.php");
-    exit;
-}
 ?>
+
+
 <!DOCTYPE html>
 <html lang="lt">
 <head>
@@ -27,7 +17,7 @@ if (isset($_SESSION['patient_id'])) {
         
         <?php 
         if (isset($_SESSION['error'])) {
-            echo '<p style="color: red; font-weight: bold;">' . htmlspecialchars($_SESSION['error']) . '</p>';
+            echo '<p style="color: red; font-weight: bold;">' . $_SESSION['error'] . '</p>';
             unset($_SESSION['error']);
         }
         ?>
@@ -42,7 +32,7 @@ if (isset($_SESSION['patient_id'])) {
             <button type="submit">Prisijungti</button>
         </form>
 
-        <a href="../index.php" class="btn" style="margin-top: 15px;">Grįžti į pagrindinį puslapį</a>
+        <a href="../index.php" class="btn">Grįžti į pagrindinį puslapį</a>
     </div>
 </body>
 </html>

@@ -14,26 +14,20 @@ if (!$appointment_id || !$patient_id) {
     die("Trūksta duomenų (appointment_id arba patient_id).");
 }
 
-// Get Patient Info
-$pstmt = $pdo->prepare("SELECT * FROM patients WHERE id = ?");
-$pstmt->execute([$patient_id]);
-$patient = $pstmt->fetch(PDO::FETCH_ASSOC);
+$patient_result = $pdo->query("SELECT * FROM patients WHERE id = $patient_id");
+$patient = $patient_result->fetch(PDO::FETCH_ASSOC);
 
-// Get Current Appointment Info
-$astmt = $pdo->prepare("SELECT a.*, d.specialization FROM appointments a JOIN doctors d ON a.doctor_id = d.id WHERE a.id = ?");
-$astmt->execute([$appointment_id]);
-$appointment = $astmt->fetch(PDO::FETCH_ASSOC);
+$appointment_result = $pdo->query("SELECT a.*, d.specialization FROM appointments a JOIN doctors d ON a.doctor_id = d.id WHERE a.id = $appointment_id");
+$appointment = $appointment_result->fetch(PDO::FETCH_ASSOC);
 
-// Get Full Visit History
-$hstmt = $pdo->prepare("SELECT a.*, d.specialization FROM appointments a JOIN doctors d ON a.doctor_id = d.id WHERE a.patient_id = ? ORDER BY a.appointment_date DESC");
-$hstmt->execute([$patient_id]);
-$history = $hstmt->fetchAll(PDO::FETCH_ASSOC);
+$history_result = $pdo->query("SELECT a.*, d.specialization FROM appointments a JOIN doctors d ON a.doctor_id = d.id WHERE a.patient_id = $patient_id ORDER BY a.appointment_date DESC");
+$history = $history_result->fetchAll(PDO::FETCH_ASSOC);
 
-// Get Medical Records
-$rstmt = $pdo->prepare("SELECT mr.*, d.first_name AS doc_first, d.last_name AS doc_last FROM medical_records mr LEFT JOIN doctors d ON mr.doctor_id = d.id WHERE mr.patient_id = ? ORDER BY mr.created_at DESC");
-$rstmt->execute([$patient_id]);
-$records = $rstmt->fetchAll(PDO::FETCH_ASSOC);
+$records_result = $pdo->query("SELECT mr.*, d.first_name AS doc_first, d.last_name AS doc_last FROM medical_records mr LEFT JOIN doctors d ON mr.doctor_id = d.id WHERE mr.patient_id = $patient_id ORDER BY mr.created_at DESC");
+$records = $records_result->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
+
 <!DOCTYPE html>
 <html lang="lt">
 <head>
@@ -47,31 +41,28 @@ $records = $rstmt->fetchAll(PDO::FETCH_ASSOC);
         <h2>Paciento Kortelė</h2>
 
         <?php if (isset($_SESSION['message'])): ?>
-            <p style="color: green; font-weight: bold;"><?= htmlspecialchars($_SESSION['message']); unset($_SESSION['message']); ?></p>
+            <p style="color: green; font-weight: bold;"><?= $_SESSION['message']; unset($_SESSION['message']); ?></p>
         <?php endif; ?>
 
-        <!-- Patient and Appointment Info -->
         <h3>Paciento Duomenys</h3>
-        <p><strong>Vardas, Pavardė:</strong> <?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?></p>
-        <p><strong>Asmens kodas:</strong> <?= htmlspecialchars($patient['personal_code']) ?></p>
-        <p><strong>Lytis:</strong> <?= htmlspecialchars($patient['gender']) ?></p>
-        <p><strong>Telefono nr.:</strong> <?= htmlspecialchars($patient['phone']) ?></p>
+        <p><strong>Vardas, Pavardė:</strong> <?= $patient['first_name'] . ' ' . $patient['last_name'] ?></p>
+        <p><strong>Asmens kodas:</strong> <?= $patient['personal_code'] ?></p>
+        <p><strong>Lytis:</strong> <?= $patient['gender'] ?></p>
+        <p><strong>Telefono nr.:</strong> <?= $patient['phone'] ?></p>
 
         <hr>
 
         <h3>Šio Vizito Detalės</h3>
-        <p><strong>Data:</strong> <?= htmlspecialchars(date('Y-m-d H:i', strtotime($appointment['appointment_date']))) ?></p>
-        <p><strong>Specializacija:</strong> <?= htmlspecialchars($appointment['specialization']) ?></p>
-        <p><strong>Paciento Komentaras:</strong> <?= htmlspecialchars($appointment['comment'] ?: '-') ?></p>
+        <p><strong>Data:</strong> <?= date('Y-m-d H:i', strtotime($appointment['appointment_date'])) ?></p>
+        <p><strong>Specializacija:</strong> <?= $appointment['specialization'] ?></p>
+        <p><strong>Paciento Komentaras:</strong> <?= $appointment['comment'] ?: '-' ?></p>
 
         <hr>
 
-        <!-- Actions -->
         <a href="doctor_add_record.php?patient_id=<?= $patient_id ?>&appointment_id=<?= $appointment_id ?>" class="btn">Įvesti Apsilankymo Įrašą</a>
         
         <hr>
 
-        <!-- Medical Records -->
         <h3>Medicininiai Įrašai</h3>
         <?php if (empty($records)): ?>
             <p>Nėra įvestų medicininių įrašų.</p>
@@ -88,10 +79,10 @@ $records = $rstmt->fetchAll(PDO::FETCH_ASSOC);
                 <tbody>
                     <?php foreach ($records as $r): ?>
                         <tr>
-                            <td><?= htmlspecialchars(date('Y-m-d H:i', strtotime($r['created_at']))) ?></td>
-                            <td><?= htmlspecialchars($r['doc_first'] . ' ' . $r['doc_last']) ?></td>
-                            <td><?= htmlspecialchars($r['event']) ?></td>
-                            <td><?= htmlspecialchars($r['diagnosis']) ?></td>
+                            <td><?= date('Y-m-d H:i', strtotime($r['created_at'])) ?></td>
+                            <td><?= $r['doc_first'] . ' ' . $r['doc_last'] ?></td>
+                            <td><?= $r['event'] ?></td>
+                            <td><?= $r['diagnosis'] ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -100,7 +91,6 @@ $records = $rstmt->fetchAll(PDO::FETCH_ASSOC);
 
         <hr>
 
-        <!-- Full Visit History -->
         <h3>Visų Vizitų Istorija</h3>
         <?php if (empty($history)): ?>
             <p>Nėra vizitų istorijos.</p>
@@ -116,9 +106,9 @@ $records = $rstmt->fetchAll(PDO::FETCH_ASSOC);
                 <tbody>
                     <?php foreach ($history as $h): ?>
                         <tr>
-                            <td><?= htmlspecialchars(date('Y-m-d H:i', strtotime($h['appointment_date']))) ?></td>
-                            <td><?= htmlspecialchars($h['specialization']) ?></td>
-                            <td><?= htmlspecialchars($h['comment'] ?: '-') ?></td>
+                            <td><?= date('Y-m-d H:i', strtotime($h['appointment_date'])) ?></td>
+                            <td><?= $h['specialization'] ?></td>
+                            <td><?= $h['comment'] ?: '-' ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

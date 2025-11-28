@@ -11,35 +11,30 @@ $doctor_id = $_SESSION['doctor_id'];
 $patient_id = $_GET['patient_id'] ?? null;
 $appointment_id = $_GET['appointment_id'] ?? null;
 
+
 if (!$patient_id) {
     die("Trūksta paciento ID.");
 }
 
-// Fetch patient's name for display
-$pname_stmt = $pdo->prepare("SELECT first_name, last_name FROM patients WHERE id = ?");
-$pname_stmt->execute([$patient_id]);
-$pname = $pname_stmt->fetch(PDO::FETCH_ASSOC);
+
+
+$pname_result = $pdo->query("SELECT first_name, last_name FROM patients WHERE id = $patient_id");
+$pname = $pname_result->fetch(PDO::FETCH_ASSOC);
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $event = trim($_POST['event'] ?? '');
-    $diagnosis = trim($_POST['diagnosis'] ?? '');
+    $event = trim($_POST['event']);
+    $diagnosis = trim($_POST['diagnosis']);
 
-    if ($event && $diagnosis) {
-        $stmt = $pdo->prepare("
-            INSERT INTO medical_records (patient_id, doctor_id, appointment_id, event, diagnosis)
-            VALUES (?, ?, ?, ?, ?)
-        ");
-        $stmt->execute([$patient_id, $doctor_id, $appointment_id, $event, $diagnosis]);
+    $pdo->query("INSERT INTO medical_records (patient_id, doctor_id, appointment_id, event, diagnosis) VALUES ($patient_id, $doctor_id, '$appointment_id', '$event', '$diagnosis')");
 
-        $_SESSION["message"] = "Apsilankymo duomenys sėkmingai įrašyti!";
-        header("Location: doctor_patient_details.php?patient_id=$patient_id&appointment_id=$appointment_id");
-        exit;
-    } else {
-        $error = "Prašome užpildyti visus laukus!";
-    }
+    $_SESSION["message"] = "Apsilankymo duomenys sėkmingai įrašyti!";
+    header("Location: doctor_patient_details.php?patient_id=$patient_id&appointment_id=$appointment_id");
+    exit;
 }
 ?>
+
+
 <!DOCTYPE html>
 <html lang="lt">
 <head>
@@ -51,11 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container">
         <h1 onclick="window.location.href='../index.php'">HOSPITAL</h1>
         <h2>Įvesti apsilankymo duomenis</h2>
-        <p>Pacientas: <strong><?= htmlspecialchars($pname['first_name'] . ' ' . $pname['last_name']) ?></strong></p>
-
-        <?php if (!empty($error)): ?>
-            <p style="color: red; font-weight: bold;"><?= htmlspecialchars($error) ?></p>
-        <?php endif; ?>
+        <p>Pacientas: <strong><?= $pname['first_name'] . ' ' . $pname['last_name'] ?></strong></p>
 
         <form method="POST">
             <label for="event">Apsilankymo eiga/Įvykis:</label>
@@ -67,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit">Išsaugoti įrašą</button>
         </form>
 
-        <a href="doctor_patient_details.php?patient_id=<?= $patient_id ?>&appointment_id=<?= $appointment_id ?>" class="btn" style="margin-top: 15px;">Grįžti atgal</a>
+        <a href="doctor_patient_details.php?patient_id=<?= $patient_id ?>&appointment_id=<?= $appointment_id ?>"class="btn">Grįžti atgal</a>
     </div>
 </body>
 </html>

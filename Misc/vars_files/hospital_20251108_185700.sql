@@ -259,28 +259,28 @@ COPY public.doctors (id, first_name, last_name, specialization, work_start, work
 --
 
 COPY public.medical_records (id, patient_id, doctor_id, appointment_id, event, diagnosis, created_at) FROM stdin;
-1	2	4	1	Atvyko dėl periodinio patikrinimo	Radikulopatija	2026-07-30 11:29:00
-2	2	5	2	Pacientas jaučia nugaros skausmus	Radikulopatija	2026-11-05 14:09:00
-3	2	9	3	Pacientas skundžiasi galvos skausmu	Nėra ligos požymių	2026-07-07 10:05:00
-4	2	2	4	Pacientas karščiuoja	Radikulopatija	2026-09-25 14:24:00
-5	2	6	5	Pacientas jaučia silpnumą	Radikulopatija	2026-12-30 07:36:00
-6	3	8	6	Atvyko dėl periodinio patikrinimo	Nėra ligos požymių	2026-09-09 11:55:00
-7	3	10	7	Pacientas skundžiasi galvos skausmu	Migrena	2026-02-02 11:26:00
-8	3	2	8	Atvyko dėl periodinio patikrinimo	Hipertenzija	2026-04-08 09:25:00
-9	3	4	9	Atvyko po traumos	Migrena	2026-04-16 11:35:00
-10	3	6	10	Pacientas skundžiasi galvos skausmu	Ūmus virusinis nazofaringitas (peršalimas)	2026-05-09 10:50:00
-11	3	5	11	Pacientas jaučia silpnumą	Radikulopatija	2026-10-09 10:22:00
-12	3	11	12	Atvyko po traumos	Gripas	2026-07-05 11:40:00
-13	3	6	13	Reikalingas kraujo tyrimas	Ūmus virusinis nazofaringitas (peršalimas)	2026-05-27 12:23:00
-14	3	9	14	Pacientas jaučia silpnumą	Ūmus virusinis nazofaringitas (peršalimas)	2026-02-25 16:30:00
-15	3	7	15	Pacientas jaučia silpnumą	Ūmus virusinis nazofaringitas (peršalimas)	2026-03-13 15:21:00
-16	1	1	16	Pacientas skundžiasi galvos skausmu	Nėra ligos požymių	2026-05-11 08:39:00
-17	1	3	17	Reikalingas kraujo tyrimas	Gripas	2026-12-03 15:43:00
-18	1	9	18	Reikalingas kraujo tyrimas	Gripas	2026-08-28 12:58:00
-19	1	9	19	Atvyko po traumos	Alerginis rinitas	2026-05-21 10:05:00
-20	1	6	20	Pacientas jaučia nugaros skausmus	Migrena	2026-12-03 09:49:00
-21	1	7	21	Pacientas jaučia nugaros skausmus	Alerginis rinitas	2026-03-11 11:03:00
-22	1	1	22	Pacientas jaučia silpnumą	Radikulopatija	2026-01-19 09:08:00
+1	2	4	1	Atvyko dėl periodinio patikrinimo	Radikulopatija	2026-07-30 11:29:47.127392
+2	2	5	2	Pacientas jaučia nugaros skausmus	Radikulopatija	2026-11-05 14:09:51.203846
+3	2	9	3	Pacientas skundžiasi galvos skausmu	Nėra ligos požymių	2026-07-07 10:05:11.468235
+4	2	2	4	Pacientas karščiuoja	Radikulopatija	2026-09-25 14:24:59.316098
+5	2	6	5	Pacientas jaučia silpnumą	Radikulopatija	2026-12-30 07:36:26.556916
+6	3	8	6	Atvyko dėl periodinio patikrinimo	Nėra ligos požymių	2026-09-09 11:55:43.236051
+7	3	10	7	Pacientas skundžiasi galvos skausmu	Migrena	2026-02-02 11:26:36.486597
+8	3	2	8	Atvyko dėl periodinio patikrinimo	Hipertenzija	2026-04-08 09:25:57.163257
+9	3	4	9	Atvyko po traumos	Migrena	2026-04-16 11:35:43.156489
+10	3	6	10	Pacientas skundžiasi galvos skausmu	Ūmus virusinis nazofaringitas (peršalimas)	2026-05-09 10:50:20.469523
+11	3	5	11	Pacientas jaučia silpnumą	Radikulopatija	2026-10-09 10:22:16.235614
+12	3	11	12	Atvyko po traumos	Gripas	2026-07-05 11:40:22.156984
+13	3	6	13	Reikalingas kraujo tyrimas	Ūmus virusinis nazofaringitas (peršalimas)	2026-05-27 12:23:53.561248
+14	3	9	14	Pacientas jaučia silpnumą	Ūmus virusinis nazofaringitas (peršalimas)	2026-02-25 16:30:41.346521
+15	3	7	15	Pacientas jaučia silpnumą	Ūmus virusinis nazofaringitas (peršalimas)	2026-03-13 15:21:31.567489
+16	1	1	16	Pacientas skundžiasi galvos skausmu	Nėra ligos požymių	2026-05-11 08:39:48.430651
+17	1	3	17	Reikalingas kraujo tyrimas	Gripas	2026-12-03 15:43:59.503126
+18	1	9	18	Reikalingas kraujo tyrimas	Gripas	2026-08-28 12:58:28.468259
+19	1	9	19	Atvyko po traumos	Alerginis rinitas	2026-05-21 10:05:32.486251
+20	1	6	20	Pacientas jaučia nugaros skausmus	Migrena	2026-12-03 09:49:26.431658
+21	1	7	21	Pacientas jaučia nugaros skausmus	Alerginis rinitas	2026-03-11 11:03:29.316520
+22	1	1	22	Pacientas jaučia silpnumą	Radikulopatija	2026-01-19 09:08:50.598510
 \.
 
 
@@ -290,7 +290,7 @@ COPY public.medical_records (id, patient_id, doctor_id, appointment_id, event, d
 
 COPY public.patients (id, first_name, last_name, email, personal_code, password, phone, gender, medical_history) FROM stdin;
 2	Gitanas	Nausėda	prezidentas@gov.lt	36405192222	$2y$12$BaeLdNsXC1u2oWIiO.ac9.mIoUCzsQx0iAPVgRYCTgkV04bVv1vWy	+37062222222	Vyras	\N
-1	Egidijus	Dragūnass	selas@gmail.com	37604231111	$2y$12$8cnD7m2vrQP/w7hMJBbUM.ohf4kaIS5hLM4BcQLJ4dnRkQPUx24NS	+37061111111	Vyras	\N
+1	Egidijus	Dragūnas	selas@gmail.com	37604231111	$2y$12$8cnD7m2vrQP/w7hMJBbUM.ohf4kaIS5hLM4BcQLJ4dnRkQPUx24NS	+37061111111	Vyras	\N
 3	Marytė	Pavardenė	maryte@yahoo.lt	48003159012	$2y$12$KCdItuwM71iyxnRaQwVfkuVZA9wAnhAyvpLpk3Qgdr0gwZsTklvoK	+37063333333	Moteris	\N
 \.
 
