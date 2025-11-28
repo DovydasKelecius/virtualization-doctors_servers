@@ -1,5 +1,4 @@
 vault_password.sh
 .venv/
-inventory.ini
+*inventory.ini
 tmp/
-GEMINI.md

@@ -159,6 +159,7 @@
           strategy = mitogen_linear
           host_key_checking = False
           auto_install_module_deps = True
+          deprecation_warnings=False
 
     - name: 11. Verify Ansible installation
       ansible.builtin.command:
@@ -224,7 +225,7 @@
       register: pubkey
       changed_when: false
 
-    - name: Success – key ready!
+    - name: Success - key ready!
       ansible.builtin.debug:
         msg: |
           Dedicated deployment key created!
@@ -239,3 +240,48 @@
         group: ansible
         mode: '0700'
       no_log: true
+
+    - name: Deploy remaining VMs from inside ansible-vm
+      ansible.builtin.shell: |
+        set -e
+        . /home/ansible/.venv/bin/activate
+        ansible-playbook deploy_remaining_vms.yml --vault-password-file /home/ansible/playbooks/vault_password.sh
+      args:
+        chdir: /home/ansible/playbooks
+        executable: /bin/bash
+      become: true
+      become_user: ansible
+      register: internal_playbook_output
+      changed_when: false
+
+    - name: Display internal playbooks output
+      ansible.builtin.debug:
+        var: internal_playbook_output.stdout_lines
+
+    - name: Setup all VMs from inside ansible-vm
+      ansible.builtin.shell: |
+        set -e
+        . /home/ansible/.venv/bin/activate
+        ansible-playbook {{ item }} --vault-password-file /home/ansible/playbooks/vault_password.sh -i /home/ansible/inventory.ini
+      args:
+        chdir: /home/ansible/playbooks
+        executable: /bin/bash
+      loop:
+        - setup_db_vm.yml
+        - setup_webserver_vm.yml
+        - setup_client_vm.yml
+      become: true
+      become_user: ansible
+      register: internal_playbook_output
+      changed_when: false
+
+    - name: Copy final public inventory.ini to local machine
+      ansible.builtin.fetch:
+        src: /home/ansible/public_inventory.ini
+        dest: ../../Misc/
+        flat: yes
+      
+    - name: Remove vault password file from ansible-vm
+      ansible.builtin.file:
+        state: absent
+        path: /home/ansible/playbooks/vault_password.sh

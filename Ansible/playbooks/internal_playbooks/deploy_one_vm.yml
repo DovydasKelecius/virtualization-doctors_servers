@@ -125,6 +125,19 @@
     insertafter: "\\[{{ group_name }}\\]"
     line: "{{ internal_ip }} ansible_user={{ target_user }} ansible_ssh_pass={{ vm_base }}"
 
+- name: Ensure group header for public_inventory exists
+  lineinfile:
+    path: "{{ public_inventory_file }}"
+    line: "[{{ group_name }}]"
+    create: yes
+    insertafter: EOF
+
+- name: Add to public inventory file
+  lineinfile:
+    path: "{{ public_inventory_file }}"
+    insertafter: "\\[{{ group_name }}\\]"
+    line: "{{ external_ip }} ansible_port={{ ssh_port }} ansible_user={{ target_user }} ansible_ssh_pass={{ vm_base }}"
+
 - name: Add to current in-memory inventory
   add_host:
     name: "{{ vm_name }}"

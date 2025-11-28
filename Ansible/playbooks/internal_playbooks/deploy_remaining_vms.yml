@@ -7,6 +7,7 @@
     - ../vars_files/sudo_pass.yml
   vars:
     inventory_file: /home/ansible/inventory.ini
+    public_inventory_file: /home/ansible/public_inventory.ini
 
   tasks:
     # ------------------------------------------------------------------
@@ -37,6 +38,17 @@
         force: yes
         mode: '0644'
 
+    - name: Create clean server public ip file
+      copy:
+        content: |
+          [all:vars]
+          ansible_ssh_private_key_file=/home/ansible/.ssh/id_rsa
+          ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+          ansible_python_interpreter=/usr/bin/python3
+        dest: "{{ public_inventory_file }}"
+        force: yes
+        mode: '0644'
+
     # ------------------------------------------------------------------
     # 2. Deploy the three VMs
     # ------------------------------------------------------------------
@@ -57,6 +69,7 @@
         vm_name: rtfm_webserver
         template_id: 3013
         group_name: webserver
+        vm_port_forwarding: "8000"
 
     - name: Deploy Client VM
       include_tasks: deploy_one_vm.yml
