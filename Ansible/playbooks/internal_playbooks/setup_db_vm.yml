@@ -4,6 +4,7 @@
   become: yes
   vars_files:
     - ../vars_files/sudo_pass.yml
+    - ../vars_files/db_secrets.yml
     
   vars:
     ansible_become_pass: "{{ db_pass }}"
@@ -110,26 +111,10 @@
         state: absent
       tags: [db]
 
-    - name: Sukurti laikiną katalogą SQL skriptui
-      file:
-        path: /tmp/postgres_init
-        state: directory
-        mode: '0755'
-      tags: [db]
-
-    - name: Kopijuoti SQL failą į laikiną katalogą
-      copy:
-        src: ../vars_files/hospital_20251108_185700.sql
-        dest: /tmp/postgres_init/init.sql
-      tags: [db]
-
-
-
     - name: Nustatyti duomenų bazės kintamuosius
       set_fact:
         postgres_db: hospital
         postgres_user: hospital_owner
-        postgres_password: "iLoveUnix"
       tags: [db]
 
     - name: Paleisti PostgreSQL konteinerį
@@ -146,6 +131,7 @@
           - "5432:5432"
         volumes:
           - "postgres_hospital_data:/var/lib/postgresql/data"
+          - "../vars_files/hospital_20251108_185700.sql:/docker-entrypoint-initdb.d/init.sql"
       tags: [db]
 
     - name: Palaukti, kol PostgreSQL priims prisijungimus
@@ -155,29 +141,4 @@
         timeout: 60
         host: 127.0.0.1
       become: no
-      tags: [db]
-
-    - name: Kopijuoti išvalytą SQL failą į konteinerį
-      ansible.builtin.command: "docker cp /tmp/postgres_init/init.sql hospital_db_container:/tmp/init.sql"
-      changed_when: true
-      tags: [db]
-
-    - name: Importuoti duomenų bazės duomenis su psql
-      community.docker.docker_container_exec:
-        container: hospital_db_container
-        command: psql -v ON_ERROR_STOP=1 -U {{ postgres_user }} -d {{ postgres_db }} -f /tmp/init.sql
-      register: psql_import_result
-      changed_when: "'COPY' in psql_import_result.stdout"
-      tags: [db]
-
-    - name: Parodyti importavimo rezultatą (debug)
-      debug:
-        var: psql_import_result.stdout_lines
-      when: psql_import_result.stdout_lines | length > 0
-      tags: [db]
-
-    - name: Išvalyti laikiną SQL skripto katalogą
-      file:
-        path: /tmp/postgres_init
-        state: absent
       tags: [db]
