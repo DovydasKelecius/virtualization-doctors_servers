@@ -206,7 +206,7 @@
         path: /home/ansible/.ssh/id_rsa
         type: ed25519
         size: 256
-        comment: ansible@{{ ansible_fqdn | default(inventory_hostname) }}
+        comment: ansible@{{ hostvars[inventory_hostname]['ansible_host'] }}
         state: present
       register: keygen
 
