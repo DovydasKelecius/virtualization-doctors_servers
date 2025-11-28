@@ -12,7 +12,6 @@ $password_repeat = $_POST['password_repeat'] ?? '';
 $phone = $_POST['phone'] ?? '';
 $gender = $_POST['gender'] ?? '';
 
-// Hash the password
 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
 if ($password !== $password_repeat) {

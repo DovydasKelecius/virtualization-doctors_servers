@@ -1,4 +1,5 @@
 <?php session_start(); ?>
+
 <!DOCTYPE html>
 <html lang="lt">
 <head>
@@ -12,7 +13,7 @@
 
         <?php 
         if (isset($_SESSION['error'])) {
-            echo '<p style="color: red;">' . htmlspecialchars($_SESSION['error']) . '</p>';
+            echo '<p style="color: red;">' . $_SESSION['error'] . '</p>';
             unset($_SESSION['error']);
         }
         ?>

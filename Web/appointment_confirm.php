@@ -9,6 +9,8 @@ if (!isset($_SESSION['appointment_success'])) {
 $data = $_SESSION['appointment_success'];
 unset($_SESSION['appointment_success']);
 ?>
+
+
 <!DOCTYPE html>
 <html lang="lt">
 <head>
@@ -20,14 +22,13 @@ unset($_SESSION['appointment_success']);
     <div class="container">
         <h1 onclick="window.location.href='index.php'">HOSPITAL</h1>
         <h2>Sėkmingai užsiregistravote!</h2>
-        <p>Jūsų vizitas patvirtintas. Žemiau pateikiama vizito informacija.</p>
-        <hr style="margin: 20px 0;">
-        <p><strong>Gydytojas:</strong> <?= htmlspecialchars($data['doctor']) ?></p>
-        <p><strong>Specializacija:</strong> <?= htmlspecialchars($data['specialization']) ?></p>
-        <p><strong>Data ir laikas:</strong> <?= htmlspecialchars($data['datetime']) ?></p>
+        <p>Jūsų vizitas patvirtintas. Žemiau pateikiama vizito informacija:</p>
+        <p><strong>Gydytojas:</strong> <?= $data['doctor'] ?></p>
+        <p><strong>Specializacija:</strong> <?= $data['specialization'] ?></p>
+        <p><strong>Data ir laikas:</strong> <?= $data['datetime'] ?></p>
 
-        <a href="patient_home.php" class="btn" style="margin-top: 20px;">Grįžti į paciento puslapį</a>
-        <a href="my_appointments.php" class="btn" style="margin-top: 10px;">Peržiūrėti visus vizitus</a>
+        <a href="patient_home.php" class="btn">Grįžti į paciento puslapį</a>
+        <a href="my_appointments.php" class="btn">Peržiūrėti visus vizitus</a>
     </div>
 </body>
 </html>

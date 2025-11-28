@@ -1,18 +1,20 @@
 <?php 
 session_start(); 
 
-// NEW CHECK: If already logged in as a DOCTOR, redirect to doctor home
+// If already logged in as a doctor, redirect to doctor home
 if (isset($_SESSION['doctor_id'])) {
     header("Location: doctor/doctor_home.php");
     exit;
 }
 
-// 1. If already logged in as a PATIENT, redirect to patient home
+// If already logged in as a patient, redirect to patient home
 if (isset($_SESSION['patient_id'])) {
     header("Location: patient_home.php");
     exit;
 }
 ?>
+
+
 <!DOCTYPE html>
 <html lang="lt">
 <head>
@@ -27,7 +29,7 @@ if (isset($_SESSION['patient_id'])) {
     <form action="login_process.php" method="POST">
       <?php 
       if (isset($_SESSION['error'])) {
-          echo '<p style="color: red;">' . htmlspecialchars($_SESSION['error']) . '</p>';
+          echo '<p style="color: red;">' . $_SESSION['error'] . '</p>';
           unset($_SESSION['error']);
       }
       ?>

@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VENV_DIR="./.venv"
-MASTER_PLAYBOOK="../Ansible/playbooks/deploy_ansible_vm.yml"
-SETUP_PLAYBOOK="../Ansible/playbooks/setup_ansible_vm.yml"
-INVENTORY_FILE="./inventory.ini"
-VAULT_PASS_SCRIPT="./vault_password.sh"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+cd "$PROJECT_ROOT"
+
+VENV_DIR="./Misc/.venv" # Adjusted path for venv
+MASTER_PLAYBOOK="Ansible/playbooks/deploy_ansible_vm.yml"
+SETUP_PLAYBOOK="Ansible/playbooks/setup_ansible_vm.yml"
+INVENTORY_FILE="Misc/inventory.ini" # Adjusted path for inventory
+VAULT_PASS_SCRIPT="Misc/vault_password.sh" # Adjusted path for vault script
 # Cleanup on exit
 trap '[ -n "${VENV_ACTIVATED:-}" ] && deactivate 2>/dev/null || true' EXIT
 

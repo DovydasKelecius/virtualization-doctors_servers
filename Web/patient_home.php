@@ -7,28 +7,16 @@ if (!isset($_SESSION["patient_id"])) {
 
 require "db.php"; 
 
-try {
-    $pdo = new PDO(
-        "pgsql:host=$host;port=$port;dbname=$dbname",
-        $user,
-        $password,
-    );
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$patient_id = $_SESSION["patient_id"];
+$patient_result = $pdo->query("SELECT * FROM patients WHERE id = $patient_id");
+$patient = $patient_result->fetch(PDO::FETCH_ASSOC);
 
-    $stmt = $pdo->prepare("SELECT * FROM patients WHERE id = ?");
-    $stmt->execute([$_SESSION["patient_id"]]);
-    $patient = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if (!$patient) {
-        // Handle case where patient data is missing
-        header("Location: logout.php");
-        exit();
-    }
-} catch (PDOException $e) {
-    // For simplicity in a school project, we can show a generic error.
-    // In a real-world scenario, you would log this error.
-    die("Klaida jungiantis prie duomenų bazės.");
+if (!$patient) {
+    header("Location: logout.php");
+    exit();
 }
+
+
 ?>
 <!DOCTYPE html>
 <html lang="lt">
@@ -40,7 +28,7 @@ try {
 <body>
     <div class="container">
         <h1 onclick="window.location.href='index.php'">HOSPITAL</h1>
-        <p>Sveiki, <?= htmlspecialchars($patient["first_name"]) ?>!</p>
+        <p>Sveiki, <?= $patient["first_name"] ?>!</p>
 
         <a href="patient_card.php" class="btn">Paciento kortelė</a>
         <a href="doctor_registration.php" class="btn">Registracija pas daktarą</a>
