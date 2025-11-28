@@ -48,4 +48,4 @@ ansible-playbook -i "$INVENTORY_FILE" "$SETUP_PLAYBOOK" \
 echo "=== 4. All done! ==="
 
 echo "You can connect to the Client VM using the following command:"
-echo "mstsc.exe /v:193.219.42.55:4828"
+echo "mstsc.exe /v:<PUBLIC_IP>:<PORT>"
