@@ -10,9 +10,6 @@ require '../db.php';
 $appointment_id = $_GET['appointment_id'] ?? null;
 $patient_id = $_GET['patient_id'] ?? null;
 
-if (!$appointment_id || !$patient_id) {
-    die("Trūksta duomenų (appointment_id arba patient_id).");
-}
 
 $patient_result = $pdo->query("SELECT * FROM patients WHERE id = $patient_id");
 $patient = $patient_result->fetch(PDO::FETCH_ASSOC);
@@ -50,19 +47,13 @@ $records = $records_result->fetchAll(PDO::FETCH_ASSOC);
         <p><strong>Lytis:</strong> <?= $patient['gender'] ?></p>
         <p><strong>Telefono nr.:</strong> <?= $patient['phone'] ?></p>
 
-        <hr>
-
         <h3>Šio Vizito Detalės</h3>
         <p><strong>Data:</strong> <?= date('Y-m-d H:i', strtotime($appointment['appointment_date'])) ?></p>
         <p><strong>Specializacija:</strong> <?= $appointment['specialization'] ?></p>
         <p><strong>Paciento Komentaras:</strong> <?= $appointment['comment'] ?: '-' ?></p>
 
-        <hr>
-
         <a href="doctor_add_record.php?patient_id=<?= $patient_id ?>&appointment_id=<?= $appointment_id ?>" class="btn">Įvesti Apsilankymo Įrašą</a>
         
-        <hr>
-
         <h3>Medicininiai Įrašai</h3>
         <?php if (empty($records)): ?>
             <p>Nėra įvestų medicininių įrašų.</p>
@@ -89,8 +80,6 @@ $records = $records_result->fetchAll(PDO::FETCH_ASSOC);
             </table>
         <?php endif; ?>
 
-        <hr>
-
         <h3>Visų Vizitų Istorija</h3>
         <?php if (empty($history)): ?>
             <p>Nėra vizitų istorijos.</p>
@@ -114,8 +103,6 @@ $records = $records_result->fetchAll(PDO::FETCH_ASSOC);
                 </tbody>
             </table>
         <?php endif; ?>
-
-        <hr>
 
         <a href="doctor_patients.php" class="btn">Grįžti į Pacientų Sąrašą</a>
     </div>

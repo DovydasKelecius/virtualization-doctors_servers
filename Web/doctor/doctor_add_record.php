@@ -12,12 +12,6 @@ $patient_id = $_GET['patient_id'] ?? null;
 $appointment_id = $_GET['appointment_id'] ?? null;
 
 
-if (!$patient_id) {
-    die("Trūksta paciento ID.");
-}
-
-
-
 $pname_result = $pdo->query("SELECT first_name, last_name FROM patients WHERE id = $patient_id");
 $pname = $pname_result->fetch(PDO::FETCH_ASSOC);
 
