@@ -196,6 +196,7 @@
         - { src: ../../Misc/vars_files/one_creds.yml }
         - { src: ../../Misc/vars_files/sudo_pass.yml }
         - { src: ../../Misc/vars_files/hospital_20251108_185700.sql }
+        - { src: ../../Misc/vars_files/db_secrets.yml }
       loop_control:
         label: "{{ item.src | basename }}"
 
