@@ -1,7 +1,5 @@
 ---
-# ------------------------------------------------------------------
-# 1. Credentials & ID Extraction
-# ------------------------------------------------------------------
+
 - name: Load credentials for {{ vm_base }}
   set_fact:
     one_user: "{{ creds.opennebula_accounts[vm_base].user }}"
@@ -27,9 +25,6 @@
   set_fact:
     vm_id: "{{ vm_create.instances[0].vm_id }}"
 
-# ------------------------------------------------------------------
-# 2. Polling for Networking
-# ------------------------------------------------------------------
 - name: Wait for VM to be RUNNING and have Public IP
   community.general.one_vm:
     api_url: "https://grid5.mif.vu.lt/cloud3/RPC2"
@@ -59,9 +54,6 @@
   debug: 
     msg: "Target: {{ internal_ip }} (External: {{ external_ip }}:{{ ssh_port }})"
 
-# ------------------------------------------------------------------
-# 3. Wait for SSH availability
-# ------------------------------------------------------------------
 - name: Wait for SSH port to be open
   ansible.builtin.wait_for:
     host: "{{ internal_ip }}"
@@ -71,9 +63,6 @@
     delay: 10
   delegate_to: localhost
 
-# ------------------------------------------------------------------
-# 4. The Injection -> Key Setup
-# ------------------------------------------------------------------
 - name: Add temp host for injection (Using Default Password)
   add_host:
     name: "temp_{{ vm_name }}"
@@ -108,10 +97,6 @@
         key: "{{ lookup('file', '/home/ansible/.ssh/id_rsa.pub') }}"
 
     
-
-# ------------------------------------------------------------------
-# 5. Final Inventory Update
-# ------------------------------------------------------------------
 - name: Ensure group header exists
   lineinfile:
     path: "{{ inventory_file }}"
