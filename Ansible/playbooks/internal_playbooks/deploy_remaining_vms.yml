@@ -10,17 +10,12 @@
     public_inventory_file: /home/ansible/public_inventory.ini
 
   tasks:
-    # ------------------------------------------------------------------
-    # 0. PREP: Generate SSH Key for the Ansible VM itself
-    # ------------------------------------------------------------------
+ 
     - name: Ensure SSH key exists on this machine
       command: ssh-keygen -t rsa -f /home/ansible/.ssh/id_rsa -N "" -q
       args:
         creates: /home/ansible/.ssh/id_rsa
 
-    # ------------------------------------------------------------------
-    # 1. Setup Inventory
-    # ------------------------------------------------------------------
     - name: Load OpenNebula credentials
       include_vars:
         file: ../vars_files/one_creds.yml
@@ -49,9 +44,6 @@
         force: yes
         mode: '0644'
 
-    # ------------------------------------------------------------------
-    # 2. Deploy the three VMs
-    # ------------------------------------------------------------------
     - name: Deploy DB VM
       include_tasks: deploy_one_vm.yml
       vars:
@@ -79,10 +71,6 @@
         vm_name: rtfm_client
         template_id: 3024          
         group_name: client
-
-    # ------------------------------------------------------------------
-    # 3. Final Report
-    # ------------------------------------------------------------------
 
     - name: Show final inventory
       command: cat "{{ inventory_file }}"
