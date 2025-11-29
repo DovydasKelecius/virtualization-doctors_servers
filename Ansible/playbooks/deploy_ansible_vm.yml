@@ -14,17 +14,13 @@
     max_wait_seconds: 600
 
   tasks:
-    # ------------------------------------------------------------------
-    # 0. PREP: Read Local Public Key
-    # ------------------------------------------------------------------
+  # Read Local Public Key
     - name: Read local public SSH key
       set_fact:
         # Read the key file from your laptop
         local_ssh_pub_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
 
-    # ------------------------------------------------------------------
-    # 1. Load credentials
-    # ------------------------------------------------------------------
+    # Load credentials
     - name: Load vault
       include_vars:
         file: ../../Misc/vars_files/one_creds.yml
@@ -36,9 +32,7 @@
         vm_user: "{{ creds.opennebula_accounts[vm_base].user }}"
         vm_password: "{{ creds.opennebula_accounts[vm_base].password }}"
 
-    # ------------------------------------------------------------------
-    # 2. Create VM (With Legacy Contextualization)
-    # ------------------------------------------------------------------
+
     - name: Create VM
       community.general.one_vm:
         api_url: "https://grid5.mif.vu.lt/cloud3/RPC2"
@@ -67,9 +61,8 @@
       set_fact:
         vm_id: "{{ vm_create.instances[0].vm_id }}"
 
-    # ------------------------------------------------------------------
-    # 3. Poll VM until RUNNING
-    # ------------------------------------------------------------------
+
+  # Poll VM until RUNNING
     - name: Wait for VM to be RUNNING and have SSH port
       community.general.one_vm:
         api_url: "https://grid5.mif.vu.lt/cloud3/RPC2"
@@ -89,9 +82,7 @@
       delay: 10
 
 
-    # ------------------------------------------------------------------
-    # 4. Extract public access
-    # ------------------------------------------------------------------
+    # Extract public access
     - name: Extract IP and Port
       set_fact:
         external_ip: "{{ vm_poll.instances[0].attributes.PUBLIC_IP }}"
@@ -108,9 +99,7 @@
             | int
           }}
 
-    # ------------------------------------------------------------------
-    # 5. Wait for SSH
-    # ------------------------------------------------------------------
+
     - name: Wait for SSH port to be open
       ansible.builtin.wait_for:
         host: "{{ external_ip }}"
@@ -120,10 +109,6 @@
         delay: 10
       delegate_to: localhost
 
-
-    # ------------------------------------------------------------------
-    # 6. Add to inventory
-    # ------------------------------------------------------------------
 
     - name: Add host for initial password connection
       add_host:
