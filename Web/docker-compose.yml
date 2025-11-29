@@ -2,10 +2,10 @@ services:
   app:
     build:
       context: .
-      dockerfile: Web/php.Dockerfile
+      dockerfile: php.Dockerfile
     container_name: hospital_php
     volumes:
-      - ./Web:/var/www/html
+      - ./:/var/www/html
     environment:
       - DB_HOST=${DB_IP}
       - DB_PORT=5432
@@ -17,12 +17,12 @@ services:
   web:
     build:
       context: .
-      dockerfile: Web/nginx.Dockerfile
+      dockerfile: nginx.Dockerfile
     container_name: hospital_nginx
     ports:
       - "8000:80"
     depends_on:
       - app
     volumes:
-      - ./Web:/var/www/html
+      - ./:/var/www/html
     restart: always

@@ -96,7 +96,7 @@
 
     - name: "Run docker compose"
       community.docker.docker_compose_v2:
-        project_src: "/home/{{ web_user }}/webserver"
+        project_src: "/home/{{ web_user }}/webserver/Web"
         state: present
         build: always
         env_files:
