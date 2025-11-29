@@ -105,6 +105,12 @@
         name: docker
         state: started
         enabled: yes
+    
+    - name: "Add web server as 'www' in /etc/hosts"
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "{{ groups['webserver'][0]}} www.rtfm_hospital.lt"
+      become: yes
 
     ########################################################################
     # 2) Build Chromium image (Unchanged)
@@ -227,7 +233,7 @@
                 --no-service-autorun \
                 --window-size=1280,800 \
                 --test-type \
-                $URL
+                www.rtfm_hospital.lt
           } >>"$LOG" 2>&1
 
     - name: "Allow user lingering (lets user services survive logouts)"
