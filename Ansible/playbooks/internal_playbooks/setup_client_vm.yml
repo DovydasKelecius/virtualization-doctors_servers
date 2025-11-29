@@ -5,9 +5,7 @@
   vars_files:
     - ../vars_files/sudo_pass.yml
   vars:
-    # ----------------------------------------------------------------------
-    # 1. ADDED TARGET_UID AND CONSOLIDATED TARGET_USER
-    # ----------------------------------------------------------------------
+
     target_user: "client"  # Overrides web_user default, as requested
     target_uid: 1000        # default for first normal user on Debian, as requested
     ansible_become_pass: "{{ client_pass }}"
@@ -20,18 +18,13 @@
     - community.docker
 
   tasks:
-    ########################################################################
-    # 0) Base deps (host-side xauth & xdpyinfo used by the launcher)
-    ########################################################################
+  
     - name: Install python3-apt (required for ansible apt module)
       raw: |
         apt update && apt install -y python3-apt
       changed_when: false
       become: yes
 
-    # ──────────────────────────────────────────────────────────────
-    # 2. Refresh facts now that python3-apt exists
-    # ──────────────────────────────────────────────────────────────
     - name: Re-gather facts (now apt module will work)
       setup:
 
@@ -47,9 +40,6 @@
         state: latest
         update_cache: yes
 
-    ########################################################################
-    # 1) Docker repo & install (Unchanged)
-    ########################################################################
     - name: "Check if docker key exists"
       ansible.builtin.stat:
         path: /etc/apt/keyrings/docker.gpg
@@ -112,9 +102,6 @@
         line: "{{ groups['webserver'][0]}} www.rtfm_hospital.lt"
       become: yes
 
-    ########################################################################
-    # 2) Build Chromium image (Unchanged)
-    ########################################################################
     - name: "Create build dir"
       ansible.builtin.file:
         path: "{{ build_dir }}"
@@ -150,9 +137,6 @@
         force_tag: true
         state: present
 
-    ########################################################################
-    # 3) Per-user launcher + systemd user service (REVISED BLOCK)
-    ########################################################################
     - name: "Create user dirs"
       ansible.builtin.file:
         path: "{{ item }}"
@@ -165,9 +149,6 @@
         - "/home/{{ target_user }}/.config/systemd/user"
         - "{{ profile_dir }}"
 
-    # ----------------------------------------------------------------------
-    # 2. Make the autostart script inline
-    # ----------------------------------------------------------------------
     - name: "Install chromium-docker-autostart.sh"
       ansible.builtin.copy:
         dest: "/home/{{ target_user }}/bin/chromium-docker-autostart.sh"
@@ -242,9 +223,6 @@
       register: linger_result
       changed_when: false
 
-    # ----------------------------------------------------------------------
-    # 1. Inline systemd user service
-    # ----------------------------------------------------------------------
     - name: "Install systemd user service"
       ansible.builtin.copy:
         dest: "/home/{{ target_user }}/.config/systemd/user/chromium-docker.service"
