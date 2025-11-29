@@ -8,6 +8,7 @@
     
   vars:
     ansible_become_pass: "{{ db_pass }}"
+    db_vm_sql_dump_path: "/tmp/hospital_db_dump.sql" # Path inside the db-vm
 
   tasks:
     - name: Atnaujinti APT kešą ir įdiegti Docker priklausomybes
@@ -131,7 +132,6 @@
           - "5432:5432"
         volumes:
           - "postgres_hospital_data:/var/lib/postgresql/data"
-          - "../vars_files/hospital_20251108_185700.sql:/docker-entrypoint-initdb.d/init.sql"
       tags: [db]
 
     - name: Palaukti, kol PostgreSQL priims prisijungimus
@@ -141,4 +141,24 @@
         timeout: 60
         host: 127.0.0.1
       become: no
+      tags: [db]
+
+    - name: Kopijuoti SQL dump failą į db-vm
+      ansible.builtin.copy:
+        src: ../vars_files/hospital_20251108_185700.sql
+        dest: "{{ db_vm_sql_dump_path }}"
+        mode: '0644'
+      tags: [db]
+
+    - name: Importuoti SQL dump failą į PostgreSQL konteinerį
+      ansible.builtin.shell: |
+        docker exec -i hospital_db_container psql -U "{{ postgres_user }}" -d "{{ postgres_db }}" < "{{ db_vm_sql_dump_path }}"
+      environment:
+        PGPASSWORD: "{{ postgres_password }}"
+      tags: [db]
+
+    - name: Ištrinti SQL dump failą iš db-vm
+      ansible.builtin.file:
+        path: "{{ db_vm_sql_dump_path }}"
+        state: absent
       tags: [db]
