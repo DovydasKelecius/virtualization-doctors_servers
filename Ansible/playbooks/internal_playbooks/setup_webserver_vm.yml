@@ -87,6 +87,7 @@
     - name: "Create .env file with decrypted secrets"
       ansible.builtin.copy:
         content: |
+          DB_IP={{ groups['db'][0] }}
           DB_USER={{ db_user }}
           DB_PASSWORD={{ db_passwd }}
         dest: "/home/{{ web_user }}/webserver/.env"
