@@ -7,11 +7,11 @@ services:
     volumes:
       - ./Web:/var/www/html
     environment:
-      - DB_HOST=193.219.91.103
-      - DB_PORT=9206
+      - DB_HOST=${DB_IP}
+      - DB_PORT=5432
       - DB_NAME=hospital
-      - DB_USER=hospital_owner
-      - DB_PASSWORD=iLoveUnix
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
     restart: always
 
   web:
