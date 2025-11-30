@@ -14,16 +14,9 @@ VAULT_PASS_SCRIPT="Misc/vault_password.sh" # Adjusted path for vault script
 trap '[ -n "${VENV_ACTIVATED:-}" ] && deactivate 2>/dev/null || true' EXIT
 
 echo "=== 0. Checking Python Installation ==="
-if ! command -v python3 &> /dev/null; then
-    echo "Python3 not found. Installing..."
-    if command -v apt &> /dev/null; then
-        sudo apt-get update && sudo apt install -y python3 python3-venv
-    elif command -v yum &> /dev/null; then
-        sudo yum install -y python3
-    else
-        echo "ERROR: Unsupported package manager"; exit 1
-    fi
-fi
+
+sudo apt-get update && sudo apt install -y python3 python3-venv
+
 
 echo "=== 1. Setting up Python Virtual Environment ==="
 [ ! -d "$VENV_DIR" ] && python3 -m venv "$VENV_DIR"
