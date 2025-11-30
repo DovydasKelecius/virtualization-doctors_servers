@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eu pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
@@ -23,8 +23,8 @@ echo "=== 1. Setting up Python Virtual Environment ==="
 . "$VENV_DIR/bin/activate"
 VENV_ACTIVATED=1
 
-pip install --upgrade pip --quiet
-pip install --quiet pyone ansible
+pip install --upgrade pip
+pip install pyone ansible
 ansible-galaxy collection install community.general --force
 
 echo "=== 2. Deploying Ansible VM ==="
