@@ -49,7 +49,7 @@
       until: upgrade is succeeded
 
 
-    - name: 5. Install system dependencies
+    - name: Install system dependencies
       ansible.builtin.apt:
         name:
           - curl
@@ -64,12 +64,12 @@
         state: present
         update_cache: no
 
-    - name: 6. Install Ansible
+    - name: Install Ansible
       ansible.builtin.apt:
         name: ansible
         state: present
 
-    - name: 7.1 Install required system packages for venv
+    - name: Install required system packages for venv
       ansible.builtin.apt:
         name:
           - python3-venv
@@ -79,21 +79,21 @@
         update_cache: yes
       become: yes
 
-    - name: 7.2 Create venv at /home/ansible/.venv
+    - name: Create venv at /home/ansible/.venv
       ansible.builtin.command: python3 -m venv /home/ansible/.venv
       args:
         creates: /home/ansible/.venv/bin/activate
       become: yes
       become_user: ansible
 
-    - name: 7.3 Upgrade pip inside .venv
+    - name: Upgrade pip inside .venv
       ansible.builtin.pip:
         name: pip
         state: latest
         executable: /home/ansible/.venv/bin/pip
       become_user: ansible
 
-    - name: 7.4 Install required packages into .venv
+    - name: Install required packages into .venv
       ansible.builtin.pip:
         name:
           - pyone
@@ -102,13 +102,13 @@
         executable: /home/ansible/.venv/bin/pip
       become_user: ansible
 
-    - name: 7.5 Install community.general, docker, posix collection
+    - name: Install community.general, docker, posix collection
       ansible.builtin.command: /home/ansible/.venv/bin/ansible-galaxy collection install community.general community.docker ansible.posix
       become_user: ansible
       environment:
         PATH: /home/ansible/.venv/bin:{{ ansible_env.PATH }}
 
-    - name: 8.1 Add .venv auto-activation to .bashrc
+    - name: Add .venv auto-activation to .bashrc
       ansible.builtin.blockinfile:
         path: /home/ansible/.bashrc
         marker: "# {mark} ANSIBLE .VENV AUTO-ACTIVATION"
@@ -123,14 +123,14 @@
         owner: ansible
         mode: '0644'
 
-    - name: 8.2 Ensure PATH includes .venv/bin (fallback)
+    - name: Ensure PATH includes .venv/bin (fallback)
       ansible.builtin.lineinfile:
         path: /home/ansible/.bashrc
         line: 'export PATH="/home/ansible/.venv/bin:$PATH"'
         create: yes
         owner: ansible
 
-    - name: 8. Install OpenNebula Python API (pyone) into VENV
+    - name: Install OpenNebula Python API (pyone) into VENV
       ansible.builtin.pip:
         name: pyone
         state: present
@@ -138,7 +138,7 @@
       become: true
       become_user: ansible
 
-    - name: 9. Copy Mitogen directory from local machine to VM
+    - name: Copy Mitogen directory from local machine to VM
       ansible.builtin.synchronize:
         src: "../../Misc/mitogen-0.3.30/" 
         dest: "/home/ansible/mitogen-0.3.30"
@@ -148,7 +148,7 @@
       become: true
       become_user: ansible
 
-    - name: 10. Configure Ansible to use Mitogen for performance and some extra features
+    - name: Configure Ansible to use Mitogen for performance and some extra features
       ansible.builtin.copy:
         dest: /home/ansible/.ansible.cfg
         content: |
@@ -160,16 +160,16 @@
           auto_install_module_deps = True
           deprecation_warnings=False
 
-    - name: 11. Verify Ansible installation
+    - name: Verify Ansible installation
       ansible.builtin.command:
         cmd: /usr/bin/ansible --version
       register: ansible_version_output
 
-    - name: 12. Display Ansible version
+    - name: Display Ansible version
       ansible.builtin.debug:
         var: ansible_version_output.stdout
 
-    - name: 13. Copy internal playbooks to ansible-vm
+    - name: Copy internal playbooks to ansible-vm
       ansible.builtin.copy:
         src: "{{ item.src }}"
         dest: /home/ansible/playbooks/
@@ -185,7 +185,7 @@
       loop_control:
         label: "{{ item.src | basename }}"
 
-    - name: 13. Copy vars_files to ansible-vm
+    - name: Copy vars_files to ansible-vm
       ansible.builtin.copy:
         src: "{{ item.src }}"
         dest: /home/ansible/vars_files/
@@ -200,8 +200,6 @@
       loop_control:
         label: "{{ item.src | basename }}"
 
-  
-# Run this ONCE inside the ansible-vm to generate a dedicated deployment key
     - name: Generate ed25519 key pair (no passphrase)
       community.crypto.openssh_keypair:
         path: /home/ansible/.ssh/id_rsa
